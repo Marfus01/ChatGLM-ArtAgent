@@ -1,8 +1,97 @@
 import os
 from typing import Dict, Tuple, Union, Optional
-
 from torch.nn import Module
 from transformers import AutoModel
+import requests, re, json, io, base64, os
+from urllib.parse import quote
+from bs4 import BeautifulSoup
+from PIL import Image, PngImagePlugin
+
+
+"""Override Chatbot.postprocess"""
+def postprocess(self, y):
+    if y is None:
+        return []
+    for i, (message, response) in enumerate(y):
+        y[i] = (
+            None if message is None else mdtex2html.convert((message)),
+            None if response is None else mdtex2html.convert(response),
+        )
+    return y
+
+
+def parse_text(text):
+    """copy from https://github.com/GaiZhenbiao/ChuanhuChatGPT/"""
+    lines = text.split("\n")
+    lines = [line for line in lines if line != ""]
+    count = 0
+    for i, line in enumerate(lines):
+        if "```" in line:
+            count += 1
+            items = line.split('`')
+            if count % 2 == 1:
+                lines[i] = f'<pre><code class="language-{items[-1]}">'
+            else:
+                lines[i] = f'<br></code></pre>'
+        else:
+            if i > 0:
+                if count % 2 == 1:
+                    line = line.replace("`", "\`")
+                    line = line.replace("<", "&lt;")
+                    line = line.replace(">", "&gt;")
+                    line = line.replace(" ", "&nbsp;")
+                    line = line.replace("*", "&ast;")
+                    line = line.replace("_", "&lowbar;")
+                    line = line.replace("-", "&#45;")
+                    line = line.replace(".", "&#46;")
+                    line = line.replace("!", "&#33;")
+                    line = line.replace("(", "&#40;")
+                    line = line.replace(")", "&#41;")
+                    line = line.replace("$", "&#36;")
+                lines[i] = "<br>"+line
+    text = "".join(lines)
+    return text
+
+
+def translate(word):
+	url = 'http://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=null'
+	key = {
+		'type': "AUTO",
+		'i': word,
+		"doctype": "json",
+		"version": "2.1",
+		"keyfrom": "fanyi.web",
+		"ue": "UTF-8",
+		"action": "FY_BY_CLICKBUTTON",
+		"typoResult": "true"
+	}
+	response = requests.post(url, data=key)
+	if response.status_code == 200:
+		list_trans = response.text
+		result = json.loads(list_trans)
+		return result['translateResult'][0][0]['tgt']
+
+
+def call_sd_t2i(Pprompt,Nprompt, steps):
+    url = "http://127.0.0.1:6006"
+    payload = {
+        "prompt": Pprompt,
+        "steps": steps,
+        "negative_prompt": Nprompt
+    }
+    response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
+    r = response.json()
+    # print(r)
+
+    for i in r['images']:
+        image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+        png_payload = {
+            "image": "data:image/png;base64," + i
+        }
+        response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+        pnginfo = PngImagePlugin.PngInfo()
+        pnginfo.add_text("parameters", response2.json().get("info"))
+        image.save('stable_diffusion.png', pnginfo=pnginfo)
 
 
 def auto_configure_device_map(num_gpus: int) -> Dict[str, int]:
