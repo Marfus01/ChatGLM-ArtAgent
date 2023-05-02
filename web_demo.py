@@ -1,6 +1,5 @@
 from transformers import AutoModel, AutoTokenizer
 import gradio as gr
-import mdtex2html
 from utils import *
 
 
@@ -13,7 +12,9 @@ def predict(input, chatbot, max_length, top_p, temperature, history):
                                                temperature=temperature):
         chatbot[-1] = (parse_text(input), parse_text(response))       
 
+
         yield chatbot, history
+    print(history)
 
 
 def reset_user_input():
@@ -24,21 +25,31 @@ def reset_state():
     return [], []
 
 
-with gr.Blocks() as demo:
+with gr.Blocks(title="ChatGLM ArtAgent") as demo:
     gr.HTML("""<h1 align="center">ChatGLM ArtAgent</h1>""")
     with gr.Row():
         with gr.Column(scale=4):
-            chatbot = gr.Chatbot()
-            with gr.Column(scale=12):
+            chatbot = gr.Chatbot().style(height=512)
+            with gr.Column(scale=5):
                 user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=10).style(
                     container=False)
-            with gr.Column(min_width=32, scale=1):
+            with gr.Column(scale=1):
                 submitBtn = gr.Button("Submit", variant="primary")
-        with gr.Column(scale=1):
-            emptyBtn = gr.Button("Clear History")
-            max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True)
-            top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
-            temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
+        with gr.Column(scale=3):
+            result_gallery = gr.Gallery(label='Output', show_label=False).style(height=512)
+            with gr.Row():
+                with gr.Accordion(label="ChatGLM-6B"):
+                    with gr.Column():
+                        emptyBtn = gr.Button("Clear History")
+                        max_length = gr.Slider(0, 4096, value=2048, step=64.0, label="Maximum length", interactive=True)
+                        top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
+                        temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
+                with gr.Accordion(label="Stable Diffusion"):
+                    with gr.Column():
+                        drawBtn = gr.Button("Generate Image")
+                        sd_width = gr.Slider(480, 1024, value=512, step=32, label="Width", interactive=True)
+                        sd_height = gr.Slider(480, 1024, value=512, step=32, label="Height", interactive=True)
+                        sd_steps = gr.Slider(8, 40, value=20, step=4, label="Steps", interactive=True)
 
     history = gr.State([])
 
@@ -46,13 +57,15 @@ with gr.Blocks() as demo:
                     show_progress=True)
     submitBtn.click(reset_user_input, [], [user_input])
 
+    drawBtn.click(sd_predict, [chatbot, history, sd_width, sd_height, sd_steps], [chatbot, history, result_gallery], show_progress=True)
+
     emptyBtn.click(reset_state, outputs=[chatbot, history], show_progress=True)
 
 
 tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
-model = AutoModel.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True).quantize(8).half().cuda()
+model = AutoModel.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True).half().quantize(4).cuda()
 # tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
 # model = AutoModel.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True).half().cuda()
 model = model.eval()
 
-demo.queue().launch(share=False, inbrowser=True)
+demo.queue().launch(share=False, inbrowser=True, server_name='127.0.0.1', server_port=6016, favicon_path="./favicon.ico")

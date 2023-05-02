@@ -4,8 +4,10 @@ from torch.nn import Module
 from transformers import AutoModel
 import requests, re, json, io, base64, os
 from urllib.parse import quote
+import mdtex2html
 from bs4 import BeautifulSoup
 from PIL import Image, PngImagePlugin
+from 
 
 
 """Override Chatbot.postprocess"""
@@ -92,6 +94,13 @@ def call_sd_t2i(Pprompt,Nprompt, steps):
         pnginfo = PngImagePlugin.PngInfo()
         pnginfo.add_text("parameters", response2.json().get("info"))
         image.save('stable_diffusion.png', pnginfo=pnginfo)
+
+
+
+def sd_predict(chatbot, history, sd_width, sd_height, sd_steps):
+
+    return chatbot, history, []
+
 
 
 def auto_configure_device_map(num_gpus: int) -> Dict[str, int]:

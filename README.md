@@ -4,4 +4,6 @@
 
 * Forked from https://github.com/THUDM/ChatGLM-6B
 
-* Forked from https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git
+* https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git
+
+* https://github.com/LemonQu-GIT/ChatGLM-6B-Engineering
