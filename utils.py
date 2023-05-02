@@ -14,8 +14,26 @@ glm_tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote
 glm_model = AutoModel.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True).half().quantize(4).cuda()
 # glm_tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
 # glm_model = AutoModel.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True).half().cuda()
-glm_model = model.eval()
+glm_model = glm_model.eval()
 
+
+def predict(input, chatbot, max_length, top_p, temperature, history):
+    chatbot.append((parse_text(input), ""))
+    for response, history in glm_model.stream_chat(glm_tokenizer, input, history, max_length=max_length, top_p=top_p,
+                                               temperature=temperature):
+        chatbot[-1] = (parse_text(input), parse_text(response))       
+
+
+        yield chatbot, history
+    print(history)
+
+
+def reset_user_input():
+    return gr.update(value='')
+
+
+def reset_state():
+    return [], []
 
 
 """Override Chatbot.postprocess"""
@@ -83,7 +101,7 @@ def translate(word):
 
 
 def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
-    url = "http://127.0.0.1:6006"
+    url = "http://127.0.0.1:6016"
     payload = {
         "prompt": pos_prompt,
         "steps": steps,
@@ -96,30 +114,49 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
     r = response.json()
     # print(r)
-
+    image_list = []
     for i in r['images']:
-        image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
-        png_payload = {
-            "image": "data:image/png;base64," + i
-        }
-        # Get Image Info
+        image_list.append(Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0]))))
+
+        # # Get Image Info
+        # png_payload = {"image": "data:image/png;base64," + i}        
         # response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
         # pnginfo = PngImagePlugin.PngInfo()
         # pnginfo.add_text("parameters", response2.json().get("info"))
         # image.save('stable_diffusion.png', pnginfo=pnginfo)
+    return image_list
+
+
+def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history):
+    prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请直接给出作画内容，你不要回复”好的，我会画一张“等不必要的内容，你只需回复作画内容。你听懂了吗","听懂了。请给我一些作画的指令。"]]
+    prompt_imput = str(f"不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请给出“{user_input}”中的作画内容，请直接给出作画内容和对象")
+    chatbot.append((parse_text(user_input), ""))
+    for response_, history_ in glm_model.stream_chat(glm_tokenizer, prompt_imput, prompt_history, max_length=max_length, top_p=top_p,
+                                               temperature=temperature):
+        chatbot[-1] = (parse_text(user_input), parse_text(response_))
+    history.append([chatbot[-1][0], chatbot[-1][1]])
+    return chatbot, history
 
 
 
-def sd_predict(chatbot, history, width, height, steps, result_list):
+def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, width, height, steps, result_list):
     # Step 1 use ChatGLM-6B associate image description
-    
+    # !!! Currently, we don't take history into consideration
+    chatbot, history = gen_image_description(user_input, chatbot, max_length, top_p, temperature, history)
+
+    image_description = history[-1][1]
+    stop_words = ["好的", "我", "将", "会", "画"]
+    for word in stop_words:
+        image_description = image_description.replace(stop_words, "")
 
     # Step 2 use promprGenerater get Prompts
+    pos_prompt, neg_prompt = generate_prompts(image_description)
 
 
     # Step 3 use SD get images
-    
-    return result_list
+    result_list += call_sd_t2i()
+
+    return chatbot, history, result_list, request_list
 
 
 

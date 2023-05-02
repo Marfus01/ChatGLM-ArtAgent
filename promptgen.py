@@ -7,7 +7,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen_lexart", trust_remote_code=True)
 promptgen_model = AutoModelForCausalLM.from_pretrained("./model/promptgen_lexart", trust_remote_code=True).cuda()
-promptgen_model.eval()
+promptgen_model = promptgen_model.eval()
+
+
+
+def enhance_prompts(pos_prompt, neg_prompt)
+    pos_prompt = "((masterpiece, best quality, ultra-detailed, illustration))" 
+    neg_prompt = "(EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark, nsfw"
 
 
 def generate_batch(input_ids, min_length, max_length, num_beams, temperature, repetition_penalty, length_penalty, sampling_mode, top_k, top_p):
