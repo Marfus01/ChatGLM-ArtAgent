@@ -8,6 +8,8 @@ import mdtex2html
 from bs4 import BeautifulSoup
 from PIL import Image, PngImagePlugin
 from transformers import AutoModel, AutoTokenizer
+import gradio as gr
+from promptgen import *
 
 
 glm_tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
@@ -33,6 +35,9 @@ def reset_user_input():
 
 
 def reset_state():
+    return [], []
+
+def clear_gallery():
     return [], []
 
 
@@ -82,22 +87,25 @@ def parse_text(text):
 
 
 def translate(word):
-	url = 'http://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=null'
-	key = {
-		'type': "AUTO",
-		'i': word,
-		"doctype": "json",
-		"version": "2.1",
-		"keyfrom": "fanyi.web",
-		"ue": "UTF-8",
-		"action": "FY_BY_CLICKBUTTON",
-		"typoResult": "true"
-	}
-	response = requests.post(url, data=key)
-	if response.status_code == 200:
-		list_trans = response.text
-		result = json.loads(list_trans)
-		return result['translateResult'][0][0]['tgt']
+    url = 'http://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=null'
+    key = {
+        'type': "AUTO",
+        'i': word,
+        "doctype": "json",
+        "version": "2.1",
+        "keyfrom": "fanyi.web",
+        "ue": "UTF-8",
+        "action": "FY_BY_CLICKBUTTON",
+        "typoResult": "true"
+    }
+    response = requests.post(url, data=key)
+    if response.status_code == 200:
+        list_trans = response.text
+        result = json.loads(list_trans)
+        return result['translateResult'][0][0]['tgt']
+    else:
+        print(response.status_code)
+        return word
 
 
 def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
@@ -107,7 +115,7 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
         "steps": steps,
         "negative_prompt": neg_prompt,
         "cfg_scale": 7,
-        "n_iter": 4,
+        "n_iter": 2,
         "width": width,
         "height": height,
     }
@@ -129,12 +137,13 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
 
 def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history):
     prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请直接给出作画内容，你不要回复”好的，我会画一张“等不必要的内容，你只需回复作画内容。你听懂了吗","听懂了。请给我一些作画的指令。"]]
-    prompt_imput = str(f"不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请给出“{user_input}”中的作画内容，请直接给出作画内容和对象")
+    prompt_imput = str(f"请给出“{user_input}”中的作画内容，请详细描述作画中的内容和对象，并添加一些内容以丰富细节")
     chatbot.append((parse_text(user_input), ""))
     for response_, history_ in glm_model.stream_chat(glm_tokenizer, prompt_imput, prompt_history, max_length=max_length, top_p=top_p,
                                                temperature=temperature):
         chatbot[-1] = (parse_text(user_input), parse_text(response_))
     history.append([chatbot[-1][0], chatbot[-1][1]])
+    # print(history[-1])
     return chatbot, history
 
 
@@ -145,18 +154,19 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
     chatbot, history = gen_image_description(user_input, chatbot, max_length, top_p, temperature, history)
 
     image_description = history[-1][1]
-    stop_words = ["好的", "我", "将", "会", "画"]
+    stop_words = ["好的", "我", "将", "会", "画作", "关于", "一张", "画"]
     for word in stop_words:
-        image_description = image_description.replace(stop_words, "")
+        image_description = image_description.replace(word, "")
+    image_description = translate(image_description)
 
     # Step 2 use promprGenerater get Prompts
-    pos_prompt, neg_prompt = generate_prompts(image_description)
-
+    prompt_list = gen_prompts(image_description, batch_size=4)
+    # print(prompt_list)
 
     # Step 3 use SD get images
-    result_list += call_sd_t2i()
-
-    return chatbot, history, result_list, request_list
+    for pos_prompt, neg_prompt in prompt_list:
+        result_list += call_sd_t2i(pos_prompt, neg_prompt, width, height, steps)
+        yield chatbot, history, result_list, result_list.reverse()
 
 
 

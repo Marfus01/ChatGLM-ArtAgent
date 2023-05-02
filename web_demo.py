@@ -8,20 +8,23 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
     with gr.Row():
         with gr.Column(scale=4):
             chatbot = gr.Chatbot().style(height=512)
-            with gr.Column(scale=5):
-                user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=10).style(
-                    container=False)
-            with gr.Column(scale=1):
-                submitBtn = gr.Button("Submit", variant="primary")
+            with gr.Row():
+                with gr.Column(scale=8):
+                    user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=2).style(
+                        container=False)
+                with gr.Column(scale=1):
+                    submitBtn = gr.Button("Chat", variant="primary")
+                    drawBtn = gr.Button("Generate Image")
         with gr.Column(scale=3):
-            result_gallery = gr.Gallery(label='Output', show_label=False).style(height=512)
+            with gr.Group():
+                result_gallery = gr.Gallery(label='Output', show_label=False).style(preview=True)
             with gr.Row():
                 with gr.Accordion(label="Stable Diffusion"):
                     with gr.Column():
-                        drawBtn = gr.Button("Generate Image")
-                        sd_width = gr.Slider(480, 1024, value=512, step=32, label="Width", interactive=True)
-                        sd_height = gr.Slider(480, 1024, value=512, step=32, label="Height", interactive=True)
-                        sd_steps = gr.Slider(8, 40, value=20, step=4, label="Steps", interactive=True)
+                        clearBtn = gr.Button("Clear Gallery")
+                        sd_width = gr.Slider(480, 768, value=512, step=32, label="Width", interactive=True)
+                        sd_height = gr.Slider(480, 768, value=512, step=32, label="Height", interactive=True)
+                        sd_steps = gr.Slider(8, 40, value=32, step=4, label="Steps", interactive=True)
                 with gr.Accordion(label="ChatGLM-6B"):
                     with gr.Column():
                         emptyBtn = gr.Button("Clear History")
@@ -40,5 +43,6 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                      [chatbot, history, result_list, result_gallery], show_progress=True)
 
     emptyBtn.click(reset_state, outputs=[chatbot, history], show_progress=True)
+    clearBtn.click(clear_gallery, outputs=[result_list, result_gallery], show_progress=True)
 
 demo.queue().launch(share=False, inbrowser=True, server_name='127.0.0.1', server_port=6006, favicon_path="./favicon.ico")
