@@ -16,7 +16,7 @@ def enhance_prompts(pos_prompt):
     neg_prompt = "(EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark, nsfw"
     return (pos_prompt, neg_prompt)
 
-def generate_batch(input_ids, min_length=20, max_length=150, num_beams=2, temperature=1, repetition_penalty=1, length_penalty=1, sampling_mode="Top K", top_k=12, top_p=0.15):
+def generate_batch(input_ids, min_length=20, max_length=150, num_beams=2, temperature=1, repetition_penalty=2, length_penalty=1, sampling_mode="Top K", top_k=12, top_p=0.15):
     top_p = float(top_p) if sampling_mode == 'Top P' else None
     top_k = int(top_k) if sampling_mode == 'Top K' else None
 
@@ -45,10 +45,12 @@ def gen_prompts(text, batch_size=4):
     input_ids = input_ids.repeat((batch_size, 1))
 
     texts = generate_batch(input_ids)
-    print(texts)
+    print("="*20)
     prompt_list = []
     for t in texts:
         prompt_list.append( enhance_prompts(t[0:t.find("Negative")]) )
+        print(prompt_list[-1][0])
+    print("="*20)
     return prompt_list
 
 
