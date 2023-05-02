@@ -7,7 +7,15 @@ from urllib.parse import quote
 import mdtex2html
 from bs4 import BeautifulSoup
 from PIL import Image, PngImagePlugin
-from 
+from transformers import AutoModel, AutoTokenizer
+
+
+glm_tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
+glm_model = AutoModel.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True).half().quantize(4).cuda()
+# glm_tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
+# glm_model = AutoModel.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True).half().cuda()
+glm_model = model.eval()
+
 
 
 """Override Chatbot.postprocess"""
@@ -74,12 +82,16 @@ def translate(word):
 		return result['translateResult'][0][0]['tgt']
 
 
-def call_sd_t2i(Pprompt,Nprompt, steps):
+def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
     url = "http://127.0.0.1:6006"
     payload = {
-        "prompt": Pprompt,
+        "prompt": pos_prompt,
         "steps": steps,
-        "negative_prompt": Nprompt
+        "negative_prompt": neg_prompt,
+        "cfg_scale": 7,
+        "n_iter": 4,
+        "width": width,
+        "height": height,
     }
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
     r = response.json()
@@ -90,16 +102,24 @@ def call_sd_t2i(Pprompt,Nprompt, steps):
         png_payload = {
             "image": "data:image/png;base64," + i
         }
-        response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
-        pnginfo = PngImagePlugin.PngInfo()
-        pnginfo.add_text("parameters", response2.json().get("info"))
-        image.save('stable_diffusion.png', pnginfo=pnginfo)
+        # Get Image Info
+        # response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
+        # pnginfo = PngImagePlugin.PngInfo()
+        # pnginfo.add_text("parameters", response2.json().get("info"))
+        # image.save('stable_diffusion.png', pnginfo=pnginfo)
 
 
 
-def sd_predict(chatbot, history, sd_width, sd_height, sd_steps):
+def sd_predict(chatbot, history, width, height, steps, result_list):
+    # Step 1 use ChatGLM-6B associate image description
+    
 
-    return chatbot, history, []
+    # Step 2 use promprGenerater get Prompts
+
+
+    # Step 3 use SD get images
+    
+    return result_list
 
 
 

@@ -1,57 +1,13 @@
 import html
 import os
 import time
-
 import torch
-import transformers
-
-from modules import shared, generation_parameters_copypaste
-
-from modules import scripts, script_callbacks, devices, ui
-import gradio as gr
-
-from modules.ui_components import FormRow
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-class Model:
-    name = None
-    model = None
-    tokenizer = None
-
-
-available_models = []
-current = Model()
-
-base_dir = scripts.basedir()
-models_dir = os.path.join(base_dir, "models")
-
-
-def device():
-    return devices.cpu if shared.opts.promptgen_device == 'cpu' else devices.device
-
-
-def list_available_models():
-    available_models.clear()
-
-    os.makedirs(models_dir, exist_ok=True)
-
-    for dirname in os.listdir(models_dir):
-        if os.path.isdir(os.path.join(models_dir, dirname)):
-            available_models.append(dirname)
-
-    for name in [x.strip() for x in shared.opts.promptgen_names.split(",")]:
-        if not name:
-            continue
-
-        available_models.append(name)
-
-
-def get_model_path(name):
-    dirname = os.path.join(models_dir, name)
-    if not os.path.isdir(dirname):
-        return name
-
-    return dirname
+promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen_lexart", trust_remote_code=True)
+promptgen_model = AutoModelForCausalLM.from_pretrained("./model/promptgen_lexart", trust_remote_code=True).cuda()
+promptgen_model.eval()
 
 
 def generate_batch(input_ids, min_length, max_length, num_beams, temperature, repetition_penalty, length_penalty, sampling_mode, top_k, top_p):
@@ -75,29 +31,9 @@ def generate_batch(input_ids, min_length, max_length, num_beams, temperature, re
     return texts
 
 
-def model_selection_changed(model_name):
-    if model_name == "None":
-        current.tokenizer = None
-        current.model = None
-        current.name = None
-
-        devices.torch_gc()
-
-
 def generate(id_task, model_name, batch_count, batch_size, text, *args):
     shared.state.textinfo = "Loading model..."
     shared.state.job_count = batch_count
-
-    if current.name != model_name:
-        current.tokenizer = None
-        current.model = None
-        current.name = None
-
-        if model_name != 'None':
-            path = get_model_path(model_name)
-            current.tokenizer = transformers.AutoTokenizer.from_pretrained(path)
-            current.model = transformers.AutoModelForCausalLM.from_pretrained(path)
-            current.name = model_name
 
     assert current.model, 'No model available'
     assert current.tokenizer, 'No tokenizer available'
@@ -225,19 +161,3 @@ def add_tab():
 
     return [(tab, "Promptgen", "promptgen")]
 
-
-def on_ui_settings():
-    section = ("promptgen", "Promptgen")
-
-    shared.opts.add_option("promptgen_names", shared.OptionInfo("AUTOMATIC/promptgen-lexart, AUTOMATIC/promptgen-majinai-safe, AUTOMATIC/promptgen-majinai-unsafe", "Hugginface model names for promptgen, separated by comma", section=section))
-    shared.opts.add_option("promptgen_device", shared.OptionInfo("gpu", "Device to use for text generation", gr.Radio, {"choices": ["gpu", "cpu"]}, section=section))
-
-
-def on_unload():
-    current.model = None
-    current.tokenizer = None
-
-
-script_callbacks.on_ui_tabs(add_tab)
-script_callbacks.on_ui_settings(on_ui_settings)
-script_callbacks.on_script_unloaded(on_unload)

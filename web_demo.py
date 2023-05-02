@@ -1,14 +1,12 @@
-from transformers import AutoModel, AutoTokenizer
 import gradio as gr
 from utils import *
-
 
 gr.Chatbot.postprocess = postprocess
 
 
 def predict(input, chatbot, max_length, top_p, temperature, history):
     chatbot.append((parse_text(input), ""))
-    for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p,
+    for response, history in glm_model.stream_chat(glm_tokenizer, input, history, max_length=max_length, top_p=top_p,
                                                temperature=temperature):
         chatbot[-1] = (parse_text(input), parse_text(response))       
 
@@ -52,20 +50,14 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                         sd_steps = gr.Slider(8, 40, value=20, step=4, label="Steps", interactive=True)
 
     history = gr.State([])
+    result_list = gr.State([])
 
     submitBtn.click(predict, [user_input, chatbot, max_length, top_p, temperature, history], [chatbot, history],
                     show_progress=True)
     submitBtn.click(reset_user_input, [], [user_input])
 
-    drawBtn.click(sd_predict, [chatbot, history, sd_width, sd_height, sd_steps], [chatbot, history, result_gallery], show_progress=True)
+    drawBtn.click(sd_predict, [chatbot, history, sd_width, sd_height, sd_steps, result_list], [result_gallery], show_progress=True)
 
     emptyBtn.click(reset_state, outputs=[chatbot, history], show_progress=True)
-
-
-tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
-model = AutoModel.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True).half().quantize(4).cuda()
-# tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
-# model = AutoModel.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True).half().cuda()
-model = model.eval()
 
 demo.queue().launch(share=False, inbrowser=True, server_name='127.0.0.1', server_port=6016, favicon_path="./favicon.ico")
