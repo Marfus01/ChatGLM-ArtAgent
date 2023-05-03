@@ -14,8 +14,8 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                         user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=3).style(
                             container=False)
                     with gr.Column(scale=1):
-                        submitBtn = gr.Button("Chat", variant="primary")
-                        drawBtn = gr.Button("Generate Image")
+                        submitBtn = gr.Button("Chat with GLM 🚀", variant="primary")
+                        drawBtn = gr.Button("Generate Image 🎨")
         with gr.Column(scale=3):
             with gr.Group():
                 result_gallery = gr.Gallery(label='Output', show_label=False).style(preview=True)
@@ -23,15 +23,15 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                 with gr.Accordion(label="Stable Diffusion"):
                     with gr.Column():
                         # clearBtn = gr.Button("Clear Gallery")
-                        sd_width = gr.Slider(480, 768, value=512, step=32, label="Width", interactive=True)
-                        sd_height = gr.Slider(480, 768, value=512, step=32, label="Height", interactive=True)
-                        sd_steps = gr.Slider(8, 40, value=32, step=4, label="Steps", interactive=True)
+                        sd_width = gr.Slider(480, 768, value=512, step=32, label="Width ↔", interactive=True)
+                        sd_height = gr.Slider(480, 768, value=512, step=32, label="Height ↕️", interactive=True)
+                        sd_steps = gr.Slider(8, 40, value=32, step=4, label="Steps 🔃", interactive=True)
                 with gr.Accordion(label="ChatGLM-6B"):
                     with gr.Column():
                         # emptyBtn = gr.Button("Clear History")
-                        max_length = gr.Slider(0, 4096, value=2048, step=64.0, label="Maximum length", interactive=True)
-                        top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
-                        temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
+                        max_length = gr.Slider(0, 4096, value=2048, step=64.0, label="Maximum length 📏", interactive=True)
+                        top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P 🧊", interactive=True)
+                        temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature 🔥", interactive=True)
 
     history = gr.State([])
     result_list = gr.State([])
