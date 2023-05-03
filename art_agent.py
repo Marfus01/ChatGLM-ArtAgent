@@ -4,7 +4,7 @@ from utils import *
 gr.Chatbot.postprocess = postprocess
 
 with gr.Blocks(title="ChatGLM ArtAgent") as demo:
-    gr.HTML("""<h1 align="center">ChatGLM ArtAgent</h1>""")
+    gr.HTML("""<h1 align="center">🎊 ChatGLM ArtAgent 🎊 </h1>""")
     with gr.Row():
         with gr.Column(scale=4):
             chatbot = gr.Chatbot().style(height=640)
