@@ -102,7 +102,10 @@ def translate(word):
     if response.status_code == 200:
         list_trans = response.text
         result = json.loads(list_trans)
-        return result['translateResult'][0][0]['tgt']
+        trans = ""
+        for r in result['translateResult'][0]:
+            trans += r['tgt']
+        return trans
     else:
         print(response.status_code)
         return word
@@ -156,8 +159,10 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
     image_description = history[-1][1]
     # image_description = str("").join(image_description.split('\n')[1:])
     # stop_words = ["好的", "我", "将", "会", "画作", "关于", "一张", "画"]
-    # for word in stop_words:
-    #     image_description = image_description.replace(word, "")
+    stop_words = ["\n", "\t", "\r", "<br>"]
+    for word in stop_words:
+        image_description = image_description.replace(word, "")
+    print(image_description)
     image_description = translate(image_description)
     print(image_description)
 
