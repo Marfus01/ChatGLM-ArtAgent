@@ -137,9 +137,25 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
         # response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
         # pnginfo = PngImagePlugin.PngInfo()
         # pnginfo.add_text("parameters", response2.json().get("info"))
-        image.save('output/'+ time.strftime("%Y-%m-%d-%H-%M-%S-", time.localtime()) + str(user_input) "-" + str(random.randint(1000, 9999)) +'.png')
+        image.save('output/'+ time.strftime("%Y-%m-%d-%H-%M-%S-", time.localtime()) + str(user_input) + "-" + str(random.randint(1000, 9999)) +'.png')
 
     return image_list
+
+
+def call_glm_api(prompt, history, max_length, top_p, temperature):
+    url = str(get_config().get('basic').get('host'))+":"+str(get_config().get('basic').get('port'))
+    payload = {
+        "prompt": prompt,
+        "history": history,
+        "max_length": max_length,
+        "top_p": top_p,
+        "temperature": temperature
+    }
+    response = requests.post(url, json=payload)
+    json_resp_raw = response.json()
+    json_resp_raw_list = json.dumps(json_resp_raw)
+    return json_resp_raw_list
+
 
 
 def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history):
