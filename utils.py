@@ -113,7 +113,7 @@ def translate(word):
         return word
 
 
-def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
+def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
     url = "http://127.0.0.1:6016"
     payload = {
         "prompt": pos_prompt,
@@ -137,14 +137,14 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
         # response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
         # pnginfo = PngImagePlugin.PngInfo()
         # pnginfo.add_text("parameters", response2.json().get("info"))
-        image.save('output/'+ time.strftime("%Y-%m-%d-%H-%M-%S-", time.localtime()) + str(random.randint(1000, 9999)) +'.png')
+        image.save('output/'+ time.strftime("%Y-%m-%d-%H-%M-%S-", time.localtime()) + str(user_input) "-" + str(random.randint(1000, 9999)) +'.png')
 
     return image_list
 
 
 def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history):
     prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请直接给出作画内容，你不要不必要的内容，你只需回复作画内容。你听懂了吗","听懂了。请给我一些作画的指令。"]]
-    prompt_imput = str(f"请给出“{user_input}”中的作画内容，请详细描述作画中的内容和对象，并添加一些内容以丰富细节，不要输出多余的信息")
+    prompt_imput = str(f"我现在要话一副关于“{user_input}”的画，请给出“{user_input}”中的作画内容，请详细描述作画中的内容和对象，并添加一些内容以丰富细节，不要输出多余的信息")
     chatbot.append((parse_text(user_input), ""))
     for response_, history_ in glm_model.stream_chat(glm_tokenizer, prompt_imput, prompt_history, max_length=max_length, top_p=top_p,
                                                temperature=temperature):
@@ -171,13 +171,16 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
     print(image_description)
 
     # Step 2 use promprGenerater get Prompts
-    prompt_list = gen_prompts(image_description, batch_size=4)
+    # prompt_list = gen_prompts(image_description, batch_size=4)
     # print(prompt_list)
     # yield chatbot, history, result_list, []
 
+    # Alternative plan
+    prompt_list = [ enhance_prompts(image_description) ] * 4
+
     # Step 3 use SD get images
     for pos_prompt, neg_prompt in prompt_list:
-        new_images = call_sd_t2i(pos_prompt, neg_prompt, width, height, steps)
+        new_images = call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input)
         result_list = result_list + new_images
         yield chatbot, history, result_list, new_images
     yield chatbot, history, result_list, result_list
