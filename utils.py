@@ -14,20 +14,26 @@ import time
 import random
 
 
-glm_tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
-glm_model = AutoModel.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True).half().quantize(4).cuda()
+# glm_tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
+glm_tokenizer = None
+# glm_model = AutoModel.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True).half().quantize(4).cuda()
+glm_model = None
 # glm_tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
 # glm_model = AutoModel.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True).half().cuda()
-glm_model = glm_model.eval()
+# glm_model = glm_model.eval()
 
 
-def predict(input, chatbot, max_length, top_p, temperature, history):
+def predict(input, chatbot, max_length, top_p, temperature, history, from_api=True):
     chatbot.append((parse_text(input), ""))
-    for response, history in glm_model.stream_chat(glm_tokenizer, input, history, max_length=max_length, top_p=top_p,
-                                               temperature=temperature):
-        chatbot[-1] = (parse_text(input), parse_text(response))       
-
-
+    if not from_api:
+        for response, history in glm_model.stream_chat(glm_tokenizer, input, history, max_length=max_length, top_p=top_p,
+                                                temperature=temperature):
+            chatbot[-1] = (parse_text(input), parse_text(response))       
+            yield chatbot, history
+    else:
+        response = call_glm_api(input, history, max_length, top_p, temperature)["response"]
+        chatbot[-1] = (parse_text(input), parse_text(response)) 
+        history.append([chatbot[-1][0], chatbot[-1][1]])
         yield chatbot, history
     print(history)
 
@@ -143,7 +149,7 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
 
 
 def call_glm_api(prompt, history, max_length, top_p, temperature):
-    url = str(get_config().get('basic').get('host'))+":"+str(get_config().get('basic').get('port'))
+    url = "http://127.0.0.1:8000"
     payload = {
         "prompt": prompt,
         "history": history,
@@ -152,20 +158,24 @@ def call_glm_api(prompt, history, max_length, top_p, temperature):
         "temperature": temperature
     }
     response = requests.post(url, json=payload)
-    json_resp_raw = response.json()
-    json_resp_raw_list = json.dumps(json_resp_raw)
-    return json_resp_raw_list
+    response = response.json()
+    # print(response)
+    return response
 
 
-
-def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history):
+def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history, from_api=True):
     prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请直接给出作画内容，你不要不必要的内容，你只需回复作画内容。你听懂了吗","听懂了。请给我一些作画的指令。"]]
     prompt_imput = str(f"我现在要话一副关于“{user_input}”的画，请给出“{user_input}”中的作画内容，请详细描述作画中的内容和对象，并添加一些内容以丰富细节，不要输出多余的信息")
     chatbot.append((parse_text(user_input), ""))
-    for response_, history_ in glm_model.stream_chat(glm_tokenizer, prompt_imput, prompt_history, max_length=max_length, top_p=top_p,
-                                               temperature=temperature):
-        chatbot[-1] = (parse_text(user_input), parse_text(response_))
-    history.append([chatbot[-1][0], chatbot[-1][1]])
+    if not from_api:
+        for response_, history_ in glm_model.stream_chat(glm_tokenizer, prompt_imput, prompt_history, max_length=max_length, top_p=top_p,
+                                                temperature=temperature):
+            chatbot[-1] = (parse_text(user_input), parse_text(response_))
+        history.append([chatbot[-1][0], chatbot[-1][1]])
+    else:
+        response = call_glm_api(prompt_imput, prompt_history, max_length, top_p, temperature)["response"]
+        chatbot[-1] = (parse_text(user_input), parse_text(response))
+        history.append([chatbot[-1][0], chatbot[-1][1]])
     # print(history[-1])
     return chatbot, history
 
