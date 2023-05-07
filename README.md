@@ -1,9 +1,12 @@
 # ChatGLM-ArtAgent
 
+## Introduction
 
+* P-tuned ChatGLM-6B -> AutoGPT -> LDM
 
+### How to use
 
-## 引用
+## Reference
 
 * Forked from https://github.com/THUDM/ChatGLM-6B
 

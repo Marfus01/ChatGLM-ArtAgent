@@ -38,7 +38,7 @@ def generate_batch(input_ids, min_length=20, max_length=300, num_beams=2, temper
 
 
 def gen_prompts(text, batch_size=4):
-    input_ids = promptgen_tokenizer(text, return_tensors="pt").input_ids
+    input_ids = promptgen_tokenizer(text[:256], return_tensors="pt").input_ids
     if input_ids.shape[1] == 0:
         input_ids = torch.asarray([[promptgen_tokenizer.bos_token_id]], dtype=torch.long)
     input_ids = input_ids.to("cuda")
