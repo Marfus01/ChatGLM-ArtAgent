@@ -13,7 +13,7 @@ promptgen_model = promptgen_model.eval()
 
 def enhance_prompts(pos_prompt):
     pos_prompt = "((masterpiece, best quality, ultra-detailed, illustration)),"  + pos_prompt
-    neg_prompt = "(EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark, nsfw"
+    neg_prompt = "((nsfw: 1.2)), (EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark"
     return (pos_prompt, neg_prompt)
 
 def generate_batch(input_ids, min_length=20, max_length=300, num_beams=2, temperature=1, repetition_penalty=1, length_penalty=1, sampling_mode="Top K", top_k=12, top_p=0.15):

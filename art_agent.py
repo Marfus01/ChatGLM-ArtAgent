@@ -23,8 +23,8 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                 with gr.Accordion(label="Stable Diffusion"):
                     with gr.Column():
                         # clearBtn = gr.Button("Clear Gallery")
-                        sd_width = gr.Slider(480, 768, value=512, step=32, label="Width ↔", interactive=True)
-                        sd_height = gr.Slider(480, 768, value=512, step=32, label="Height ↕️", interactive=True)
+                        sd_width = gr.Slider(512, 1024, value=768, step=32, label="Width ↔", interactive=True)
+                        sd_height = gr.Slider(512, 1024, value=768, step=32, label="Height ↕️", interactive=True)
                         sd_steps = gr.Slider(8, 40, value=32, step=4, label="Steps 🔃", interactive=True)
                 with gr.Accordion(label="ChatGLM-6B"):
                     with gr.Column():
