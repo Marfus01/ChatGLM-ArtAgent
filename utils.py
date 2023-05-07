@@ -10,6 +10,8 @@ from PIL import Image, PngImagePlugin
 from transformers import AutoModel, AutoTokenizer
 import gradio as gr
 from promptgen import *
+import time
+import random
 
 
 glm_tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
@@ -127,14 +129,16 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps):
     # print(r)
     image_list = []
     for i in r['images']:
-        image_list.append(Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0]))))
+        image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+        image_list.append(image)
 
-        # # Get Image Info
+        # Get Image Info
         # png_payload = {"image": "data:image/png;base64," + i}        
         # response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
         # pnginfo = PngImagePlugin.PngInfo()
         # pnginfo.add_text("parameters", response2.json().get("info"))
-        # image.save('stable_diffusion.png', pnginfo=pnginfo)
+        image.save('output/'+ time.strftime("%Y-%m-%d-%H-%M-%S-", time.localtime()) + str(random.randint(1000, 9999)) +'.png')
+
     return image_list
 
 
