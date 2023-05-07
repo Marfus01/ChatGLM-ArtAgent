@@ -16,7 +16,7 @@ def enhance_prompts(pos_prompt):
     neg_prompt = "(EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark, nsfw"
     return (pos_prompt, neg_prompt)
 
-def generate_batch(input_ids, min_length=20, max_length=150, num_beams=2, temperature=1, repetition_penalty=1, length_penalty=1, sampling_mode="Top K", top_k=12, top_p=0.15):
+def generate_batch(input_ids, min_length=20, max_length=300, num_beams=2, temperature=1, repetition_penalty=1, length_penalty=1, sampling_mode="Top K", top_k=12, top_p=0.15):
     top_p = float(top_p) if sampling_mode == 'Top P' else None
     top_k = int(top_k) if sampling_mode == 'Top K' else None
 
