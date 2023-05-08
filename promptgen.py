@@ -3,26 +3,39 @@ import os
 import time
 import torch
 import jieba
+import re, string
 import nltk
+from nltk import word_tokenize
+from nltk.stem.porter import PorterStemmer
+from nltk.corpus import stopwords
 import pandas as pd
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import random
+
+# nltk.download('stopwords')
+# nltk.download('punkt')
 
 # Load prompt generation seq2seq model
 promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen-lexart", trust_remote_code=True)
 promptgen_model = AutoModelForCausalLM.from_pretrained("./model/promptgen-lexart", trust_remote_code=True).cuda()
 promptgen_model = promptgen_model.eval()
+print("promptgen_model loaded")
 
 # Load donbooru tags
-synonym_dict = []
-tag_dict = []
+synonym_dict = dict()
+tag_dict = dict()
 danbooru = pd.read_csv('./tags/danbooru.csv')
 danbooru.fillna('NaN', inplace=True)
 for index, row in danbooru.iterrows():
-    tag_dict[row["tag"]] = int(row["popularity"])
-    synonym_dict[row["tag"]] = row["tag"]
-    synonyms = row["synonyms"]
-    for s in synonyms:
-        synonym_dict[s] = row["tag"]
+    if int(row["popularity"]) >= 50:
+        tag_dict[row["tag"]] = int(row["popularity"])
+        synonym_dict[row["tag"]] = [row["tag"]]
+        synonyms = row["synonyms"]
+        for s in synonyms:
+            synonym_dict[row["tag"]].append(s)
+tag_dict = dict(sorted(tag_dict.items(), key = lambda kv:(kv[1], kv[0]), reverse=True))
+print("danbooru tags loaded")
+# print(synonym_dict)
 
 
 def enhance_prompts(pos_prompt):
@@ -66,11 +79,32 @@ def gen_prompts(text, batch_size=4):
     return prompt_list
 
 def tag_extract(text, batch_size=4, mask_ratio=0.2):
+    punctuations = [",", ".", "/", ";", "[", "]", "-", "=", "!", "(", ")", "?" "。", "，", "、", "：", "？", "！"]
+    words = word_tokenize(text)
+    words = [w for w in words if w not in punctuations]
+    words = [PorterStemmer().stem(w) for w in words if w not in set(stopwords.words("english"))]
+    # print(words)
+    
+    def find_tag(word):
+        for option in tag_dict:
+            for s in synonym_dict[option]:
+                if 1.5 * len(w) > len(s) and s.startswith(w):
+                    # print(word, option)
+                    return option
+        return False
 
-
-
-
-    for t in texts:
-        prompt_list.append( enhance_prompts(t[0:t.find("Negative")]) )
-    return prompt_list
-
+    words_ = []
+    for w in words:
+        tag = find_tag(w)
+        if tag:
+            words_.append(tag)
+    
+    words_ = list(set(words_))
+    print(words_)
+    
+    texts = []
+    for i in range(batch_size):
+        random_list = sorted(random.sample(range(0, len(words_)), int((1 - (mask_ratio)) * len(words_))))
+        texts.append(text + ", ".join([words_[index] for index in random_list]))
+    print(texts)
+    return [enhance_prompts(t) for t in texts]

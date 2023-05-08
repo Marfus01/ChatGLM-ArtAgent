@@ -202,7 +202,8 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
     # yield chatbot, history, result_list, []
 
     # Alternative plan
-    prompt_list = [ enhance_prompts(image_description) ] * 4
+    # prompt_list = [ enhance_prompts(image_description) ] * 4
+    prompt_list = tag_extract(image_description)
 
     # Step 3 use SD get images
     for pos_prompt, neg_prompt in prompt_list:
