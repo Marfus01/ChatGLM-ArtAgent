@@ -143,7 +143,7 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
         # response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
         # pnginfo = PngImagePlugin.PngInfo()
         # pnginfo.add_text("parameters", response2.json().get("info"))
-        image.save('output/'+ time.strftime("%Y-%m-%d-%H-%M-%S-", time.localtime()) + str(user_input) + "-" + str(random.randint(1000, 9999)) +'.png')
+        image.save('output/'+ time.strftime("%Y-%m-%d-%H-%M-%S-", time.localtime()) + str(user_input[:12]) + "-" + str(random.randint(1000, 9999)) +'.png')
 
     return image_list
 
@@ -164,53 +164,95 @@ def call_glm_api(prompt, history, max_length, top_p, temperature):
 
 
 def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history, from_api=True):
-    prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请直接给出作画内容，你不要不必要的内容，你只需回复作画内容。你听懂了吗","听懂了。请给我一些作画的指令。"]]
-    prompt_imput = str(f"我现在要话一副关于“{user_input}”的画，请给出“{user_input}”中的作画内容，请详细描述作画中的内容和对象，并添加一些内容以丰富细节，不要输出多余的信息")
-    chatbot.append((parse_text(user_input), ""))
-    if not from_api:
-        for response_, history_ in glm_model.stream_chat(glm_tokenizer, prompt_imput, prompt_history, max_length=max_length, top_p=top_p,
+    def get_respond(prompt_history, prompt_input):
+        if not from_api:
+            response = ""
+            for response_, history_ in glm_model.stream_chat(glm_tokenizer, prompt_input, prompt_history, max_length=max_length, top_p=top_p,
                                                 temperature=temperature):
-            chatbot[-1] = (parse_text(user_input), parse_text(response_))
+                response = response_
+        else:
+            response = call_glm_api(prompt_input, prompt_history, max_length, top_p, temperature)["response"]
+        return response
+
+    # Step1 名词解释
+    prompt_history = [["我接下来会给你一些名词，请你依次给出它们的解释。","好的，请给我一些指令。"]]
+    prompt_input = str(f"名词解释：“{user_input}”，请详细解释这些词，并添加一些形象和内容以丰富细节，不要输出多余的信息")
+    response = get_respond(prompt_history, prompt_input)
+    print("Step1", response)
+
+    # Step2 元素提取和总结
+    prompt_history.append([prompt_input, response])
+    prompt_input = str(f"请总结归纳你刚刚的解释，并为其添加一些视觉上的元素和细节，不要输出多余的信息。")
+    response = get_respond(prompt_history, prompt_input)
+    print("Step2", response)
+
+    # Step3 作画素材
+    prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请直接给出作画内容，不要输出不必要的内容，你只需回复作画内容。你听懂了吗", "听懂了。请给我一些作画的指令。"]]
+    prompt_input = str(f"我现在要画一副画，请帮我详细描述作画中的内容和对象，并添加一些内容以丰富细节，这幅画关于：{response}")
+    response = get_respond(prompt_history, prompt_input)
+    print("Step3", response)
+
+    retry_count = 0
+    check = get_respond([], str(f"这里有一段描述，{response}，这段描述是关于一个场景的吗？你仅需要回答“是”或“否”。"))
+    print("CHECK", check)
+    while ("不是" in check or "是" not in check) and retry_count < 3:
+        response = get_respond(prompt_history, prompt_input)
+        check = get_respond([], str(f"这里有一段描述，{response}，这段描述是关于一个场景、物体、动物或人物的吗？你仅需要回答“是”或“否”。"))
+        retry_count += 1
+
+    if "不是" in check or "是" not in check:
+        response = "抱歉, 我还不知道该怎么画，我可能需要更多学习。"
+        chatbot.append((parse_text(user_input), parse_text(response)))
         history.append([chatbot[-1][0], chatbot[-1][1]])
-    else:
-        response = call_glm_api(prompt_imput, prompt_history, max_length, top_p, temperature)["response"]
-        chatbot[-1] = (parse_text(user_input), parse_text(response))
-        history.append([chatbot[-1][0], chatbot[-1][1]])
+        return chatbot, history, parse_text(response), "FAILED"
+
+    chatbot.append((parse_text(user_input), parse_text(response)))
+    history.append([chatbot[-1][0], chatbot[-1][1]])
+
+    # Step4 作画素材
+    prompt_history = [["下面我将给你一段话，请你帮我抽取其中的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔，不要输出多余的内容","听懂了，请给我一段文字。"]]
+    prompt_input = str(f"以下是一段描述，抽取其中包括天气、自然景物、人文景物、人物等的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}")
+    response = get_respond(prompt_history, prompt_input)
+    print("Step4", response)
+
     # print(history[-1])
-    return chatbot, history
+    return chatbot, history, parse_text(response), "SUCCESS"
 
 
 
 def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, width, height, steps, result_list):
     # Step 1 use ChatGLM-6B associate image description
     # !!! Currently, we don't take history into consideration
-    chatbot, history = gen_image_description(user_input, chatbot, max_length, top_p, temperature, history)
+    chatbot, history, image_description, code = gen_image_description(user_input, chatbot, max_length, top_p, temperature, history)
 
-    image_description = history[-1][1]
-    # image_description = str("").join(image_description.split('\n')[1:])
-    # stop_words = ["好的", "我", "将", "会", "画作", "关于", "一张", "画"]
-    stop_words = ["\n", "\t", "\r", "<br>"]
-    for word in stop_words:
-        image_description = image_description.replace(word, "")
-    print(image_description)
-    image_description = translate(image_description)
-    print(image_description)
+    if code != "SUCCESS":
+        yield chatbot, history, result_list, result_list
+    else:
+        # image_description = history[-1][1]
+        # image_description = str("").join(image_description.split('\n')[1:])
+        # stop_words = ["好的", "我", "将", "会", "画作", "关于", "一张", "画"]
+        stop_words = ["\n", "\t", "\r", "<br>"]
+        for word in stop_words:
+            image_description = image_description.replace(word, "")
+        print(image_description)
+        image_description = translate(image_description)
+        print(image_description)
 
-    # Step 2 use promprGenerater get Prompts
-    # prompt_list = gen_prompts(image_description, batch_size=4)
-    # print(prompt_list)
-    # yield chatbot, history, result_list, []
+        # Step 2 use promprGenerater get Prompts
+        # prompt_list = gen_prompts(image_description, batch_size=4)
+        # print(prompt_list)
+        # yield chatbot, history, result_list, []
 
-    # Alternative plan
-    # prompt_list = [ enhance_prompts(image_description) ] * 4
-    prompt_list = tag_extract(image_description)
-
-    # Step 3 use SD get images
-    for pos_prompt, neg_prompt in prompt_list:
-        new_images = call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input)
-        result_list = result_list + new_images
-        yield chatbot, history, result_list, new_images
-    yield chatbot, history, result_list, result_list
+        # Alternative plan
+        # prompt_list = [ enhance_prompts(image_description) ] * 4
+        prompt_list = tag_extract(image_description)
+        print(prompt_list[0])
+        # Step 3 use SD get images
+        for pos_prompt, neg_prompt in prompt_list:
+            new_images = call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input)
+            result_list = result_list + new_images
+            yield chatbot, history, result_list, new_images
+        yield chatbot, history, result_list, result_list
 
 
 

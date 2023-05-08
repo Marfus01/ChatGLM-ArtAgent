@@ -106,5 +106,5 @@ def tag_extract(text, batch_size=4, mask_ratio=0.2):
     for i in range(batch_size):
         random_list = sorted(random.sample(range(0, len(words_)), int((1 - (mask_ratio)) * len(words_))))
         texts.append(text + ", ".join([words_[index] for index in random_list]))
-    print(texts)
+    # print(texts)
     return [enhance_prompts(t) for t in texts]
