@@ -22,6 +22,10 @@
 
 * Forked from https://github.com/THUDM/ChatGLM-6B
 
-* https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git
+* * https://github.com/AUTOMATIC1111/stable-diffusion-webui
+
+* https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen
 
 * https://github.com/LemonQu-GIT/ChatGLM-6B-Engineering
+
+* https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
