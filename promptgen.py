@@ -2,6 +2,8 @@ import html
 import os
 import time
 import torch
+import jieba
+import nltk
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
