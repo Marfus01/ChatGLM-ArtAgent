@@ -187,11 +187,12 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
     print("Step2", response)
 
     # Step3 作画素材
-    prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，不需要你给我形容你的作画内容，请直接给出作画内容，不要输出不必要的内容，你只需回复作画内容。你听懂了吗", "听懂了。请给我一些作画的指令。"]]
+    prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，请直接给出作画内容，不要输出不必要的内容，你只需回复作画内容。你听懂了吗", "听懂了。请给我一些作画的指令。"]]
     prompt_input = str(f"我现在要画一副画，请帮我详细描述作画中的内容和对象，并添加一些内容以丰富细节，这幅画关于：{response}")
     response = get_respond(prompt_history, prompt_input)
     print("Step3", response)
 
+    # 检测
     retry_count = 0
     check = get_respond([], str(f"这里有一段描述，{response}，这段描述是关于一个场景的吗？你仅需要回答“是”或“否”。"))
     print("CHECK", check)
@@ -233,7 +234,7 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         # stop_words = ["好的", "我", "将", "会", "画作", "关于", "一张", "画"]
         stop_words = ["\n", "\t", "\r", "<br>"]
         for word in stop_words:
-            image_description = image_description.replace(word, "")
+            image_description = image_description.replace(word, ", ")
         print(image_description)
         image_description = translate(image_description)
         print(image_description)
@@ -253,53 +254,4 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
             result_list = result_list + new_images
             yield chatbot, history, result_list, new_images
         yield chatbot, history, result_list, result_list
-
-
-
-def auto_configure_device_map(num_gpus: int) -> Dict[str, int]:
-    # transformer.word_embeddings 占用1层
-    # transformer.final_layernorm 和 lm_head 占用1层
-    # transformer.layers 占用 28 层
-    # 总共30层分配到num_gpus张卡上
-    num_trans_layers = 28
-    per_gpu_layers = 30 / num_gpus
-
-    # bugfix: 在linux中调用torch.embedding传入的weight,input不在同一device上,导致RuntimeError
-    # windows下 model.device 会被设置成 transformer.word_embeddings.device
-    # linux下 model.device 会被设置成 lm_head.device
-    # 在调用chat或者stream_chat时,input_ids会被放到model.device上
-    # 如果transformer.word_embeddings.device和model.device不同,则会导致RuntimeError
-    # 因此这里将transformer.word_embeddings,transformer.final_layernorm,lm_head都放到第一张卡上
-    device_map = {'transformer.word_embeddings': 0,
-                  'transformer.final_layernorm': 0, 'lm_head': 0}
-
-    used = 2
-    gpu_target = 0
-    for i in range(num_trans_layers):
-        if used >= per_gpu_layers:
-            gpu_target += 1
-            used = 0
-        assert gpu_target < num_gpus
-        device_map[f'transformer.layers.{i}'] = gpu_target
-        used += 1
-
-    return device_map
-
-
-def load_model_on_gpus(checkpoint_path: Union[str, os.PathLike], num_gpus: int = 2,
-                       device_map: Optional[Dict[str, int]] = None, **kwargs) -> Module:
-    if num_gpus < 2 and device_map is None:
-        model = AutoModel.from_pretrained(checkpoint_path, trust_remote_code=True, **kwargs).half().cuda()
-    else:
-        from accelerate import dispatch_model
-
-        model = AutoModel.from_pretrained(checkpoint_path, trust_remote_code=True, **kwargs).half()
-
-        if device_map is None:
-            device_map = auto_configure_device_map(num_gpus)
-
-        model = dispatch_model(model, device_map=device_map)
-
-    return model
-
 

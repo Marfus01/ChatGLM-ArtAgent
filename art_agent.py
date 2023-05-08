@@ -1,13 +1,15 @@
 import gradio as gr
 from utils import *
 
+greetings = [("你好呀！", "您好！我是 ChatGLM-ArtAgent，一个与您交流艺术构思的AI助手。 \n\n 我调用了 ChatGLM-6B 语言模型，和 Stable Diffusion T2I模型。\n\n 我还在测试阶段，目前，我不擅长表现人物和抽象的事物，不过我可以尽我所能帮您生成场景和景观的图像！")]
+
 gr.Chatbot.postprocess = postprocess
 
 with gr.Blocks(title="ChatGLM ArtAgent") as demo:
     gr.HTML("""<h1 align="center">🎊 ChatGLM ArtAgent 🎊 </h1>""")
     with gr.Row():
         with gr.Column(scale=4):
-            chatbot = gr.Chatbot().style(height=640)
+            chatbot = gr.Chatbot(greetings).style(height=640)
             with gr.Box():
                 with gr.Row():
                     with gr.Column(scale=8):
