@@ -4,13 +4,25 @@ import time
 import torch
 import jieba
 import nltk
+import pandas as pd
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-
+# Load prompt generation seq2seq model
 promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen-lexart", trust_remote_code=True)
 promptgen_model = AutoModelForCausalLM.from_pretrained("./model/promptgen-lexart", trust_remote_code=True).cuda()
 promptgen_model = promptgen_model.eval()
 
+# Load donbooru tags
+synonym_dict = []
+tag_dict = []
+danbooru = pd.read_csv('./tags/danbooru.csv')
+danbooru.fillna('NaN', inplace=True)
+for index, row in danbooru.iterrows():
+    tag_dict[row["tag"]] = int(row["popularity"])
+    synonym_dict[row["tag"]] = row["tag"]
+    synonyms = row["synonyms"]
+    for s in synonyms:
+        synonym_dict[s] = row["tag"]
 
 
 def enhance_prompts(pos_prompt):
@@ -53,40 +65,12 @@ def gen_prompts(text, batch_size=4):
         prompt_list.append( enhance_prompts(t[0:t.find("Negative")]) )
     return prompt_list
 
+def tag_extract(text, batch_size=4, mask_ratio=0.2):
 
-# def add_tab():
-#     with gr.Blocks(analytics_enabled=False) as tab:
-#         with gr.Row(elem_id="promptgen_main"):
-#             with gr.Column(variant="compact"):
-#                 with FormRow():
-#                     sampling_mode = gr.Radio(label="Sampling mode", elem_id="promptgen_sampling_mode", value="Top K", choices=["Top K", "Top P"])
-#                     top_k = gr.Slider(label="Top K", elem_id="promptgen_top_k", value=12, minimum=1, maximum=50, step=1)
-#                     top_p = gr.Slider(label="Top P", elem_id="promptgen_top_p", value=0.15, minimum=0, maximum=1, step=0.001)
 
-#                 with gr.Row():
-#                     num_beams = gr.Slider(label="Number of beams", elem_id="promptgen_num_beams", value=1, minimum=1, maximum=8, step=1)
-#                     temperature = gr.Slider(label="Temperature", elem_id="promptgen_temperature", value=1, minimum=0, maximum=4, step=0.01)
-#                     repetition_penalty = gr.Slider(label="Repetition penalty", elem_id="promptgen_repetition_penalty", value=1, minimum=1, maximum=4, step=0.01)
 
-#                 with FormRow():
-#                     length_penalty = gr.Slider(label="Length preference", elem_id="promptgen_length_preference", value=1, minimum=-10, maximum=10, step=0.1)
-#                     min_length = gr.Slider(label="Min length", elem_id="promptgen_min_length", value=20, minimum=1, maximum=400, step=1)
-#                     max_length = gr.Slider(label="Max length", elem_id="promptgen_max_length", value=150, minimum=1, maximum=400, step=1)
 
-#                 with FormRow():
-#                     batch_count = gr.Slider(label="Batch count", elem_id="promptgen_batch_count", value=1, minimum=1, maximum=100, step=1)
-#                     batch_size = gr.Slider(label="Batch size", elem_id="promptgen_batch_size", value=10, minimum=1, maximum=100, step=1)
-
-#                 with open(os.path.join(base_dir, "explanation.html"), encoding="utf8") as file:
-#                     footer = file.read()
-#                     gr.HTML(footer)
-
-#         submit.click(
-#             fn=ui.wrap_gradio_gpu_call(generate, extra_outputs=['']),
-#             _js="submit_promptgen",
-#             inputs=[model_selection, model_selection, batch_count, batch_size, prompt, min_length, max_length, num_beams, temperature, repetition_penalty, length_penalty, sampling_mode, top_k, top_p, ],
-#             outputs=[res, res_info]
-#         )
-
-#     return [(tab, "Promptgen", "promptgen")]
+    for t in texts:
+        prompt_list.append( enhance_prompts(t[0:t.find("Negative")]) )
+    return prompt_list
 
