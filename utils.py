@@ -188,31 +188,31 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
 
     # Step3 作画素材
     prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，请直接给出作画内容，不要输出不必要的内容，你只需回复作画内容。你听懂了吗", "听懂了。请给我一些作画的指令。"]]
-    prompt_input = str(f"我现在要画一副画，请帮我详细描述作画中的内容和对象，并添加一些内容以丰富细节，这幅画关于：{response}")
+    prompt_input = str(f"我现在要画一副画，这幅画关于：{response}。请帮我详细描述作画中的画面主体和画面背景，并添加一些内容以丰富细节")
     response = get_respond(prompt_history, prompt_input)
     print("Step3", response)
 
     # 检测
-    retry_count = 0
-    check = get_respond([], str(f"这里有一段描述，{response}，这段描述是关于一个场景的吗？你仅需要回答“是”或“否”。"))
-    print("CHECK", check)
-    while ("不是" in check or "是" not in check) and retry_count < 3:
-        response = get_respond(prompt_history, prompt_input)
-        check = get_respond([], str(f"这里有一段描述，{response}，这段描述是关于一个场景、物体、动物或人物的吗？你仅需要回答“是”或“否”。"))
-        retry_count += 1
+    # retry_count = 0
+    # check = get_respond([], str(f"这里有一段描述，{response}，这段描述是关于一个场景的吗？你仅需要回答“是”或“否”。"))
+    # print("CHECK", check)
+    # while ("不是" in check or "是" not in check) and retry_count < 3:
+    #     response = get_respond(prompt_history, prompt_input)
+    #     check = get_respond([], str(f"这里有一段描述，{response}，这段描述是关于一个场景、物体、动物或人物的吗？你仅需要回答“是”或“否”。"))
+    #     retry_count += 1
 
-    if "不是" in check or "是" not in check:
-        response = "抱歉, 我还不知道该怎么画，我可能需要更多学习。"
-        chatbot.append((parse_text(user_input), parse_text(response)))
-        history.append([chatbot[-1][0], chatbot[-1][1]])
-        return chatbot, history, parse_text(response), "FAILED"
+    # if "不是" in check or "是" not in check:
+    #     response = "抱歉, 我还不知道该怎么画，我可能需要更多学习。"
+    #     chatbot.append((parse_text(user_input), parse_text(response)))
+    #     history.append([chatbot[-1][0], chatbot[-1][1]])
+    #     return chatbot, history, parse_text(response), "FAILED"
 
     chatbot.append((parse_text(user_input), parse_text(response)))
     history.append([chatbot[-1][0], chatbot[-1][1]])
 
     # Step4 作画素材
     prompt_history = [["下面我将给你一段话，请你帮我抽取其中的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔，不要输出多余的内容","听懂了，请给我一段文字。"]]
-    prompt_input = str(f"以下是一段描述，抽取其中包括天气、自然景物、人文景物、人物等的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}")
+    prompt_input = str(f"以下是一段描述，抽取其中包括人物、动物、天气、自然景物、人文景物的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}")
     response = get_respond(prompt_history, prompt_input)
     print("Step4", response)
 
@@ -232,7 +232,7 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         # image_description = history[-1][1]
         # image_description = str("").join(image_description.split('\n')[1:])
         # stop_words = ["好的", "我", "将", "会", "画作", "关于", "一张", "画"]
-        stop_words = ["\n", "\t", "\r", "<br>"]
+        stop_words = ["\n", "\t", "\r", "<br>", "没有描述", "天气：", "自然景物：", "人文景物：", "人物：", "动物："]
         for word in stop_words:
             image_description = image_description.replace(word, ", ")
         print(image_description)
