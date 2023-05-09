@@ -1,7 +1,7 @@
 import gradio as gr
 from utils import *
 
-greetings = [("你好呀！", "您好！我是 ChatGLM-ArtAgent，一个与您交流艺术构思的AI助手。 \n\n 我调用了 ChatGLM-6B 语言模型，和 Stable Diffusion T2I模型。\n\n 我还在测试阶段，目前，我不擅长表现人物和抽象的事物，不过我可以尽我所能帮您生成场景和景观的图像！")]
+greetings = [("你好呀！", "您好！我是 ChatGLM-ArtAgent，一个与您交流艺术构思的AI助手。 \n\n 我调用了 ChatGLM-6B LLM模型，和 Stable Diffusion LDM模型。\n\n 我还在测试阶段，目前，我不擅长表现人物和抽象的事物，不过我可以尽我所能帮您生成场景和景观的图像！")]
 
 gr.Chatbot.postprocess = postprocess
 
@@ -62,7 +62,7 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                     show_progress=True)
     submitBtn.click(reset_user_input, [], [user_input])
 
-    drawBtn.click(sd_predict, [user_input, chatbot, max_length, top_p, temperature, history, sd_width, sd_height, sd_steps, result_list],
+    drawBtn.click(sd_predict, [user_input, chatbot, max_length, top_p, temperature, history, sd_width, sd_height, sd_steps, sd_cfg, result_list],
                      [chatbot, history, result_list, result_gallery], show_progress=True)
     drawBtn.click(reset_user_input, [], [user_input])
 

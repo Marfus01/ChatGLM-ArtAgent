@@ -12,6 +12,7 @@ import gradio as gr
 from promptgen import *
 import time
 import random
+import re
 
 
 # glm_tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
@@ -21,7 +22,6 @@ glm_model = None
 # glm_tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
 # glm_model = AutoModel.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True).half().cuda()
 # glm_model = glm_model.eval()
-
 
 def predict(input, chatbot, max_length, top_p, temperature, history, from_api=True):
     chatbot.append((parse_text(input), ""))
@@ -119,14 +119,19 @@ def translate(word):
         return word
 
 
-def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
+def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, cfg, user_input=""):
     url = "http://127.0.0.1:6016"
     payload = {
+        "enable_hr": True,
+        "denoising_strength": 0.55,
+        "hr_scale": 1.5,
+        "hr_upscaler": "Latent",
         "prompt": pos_prompt,
         "steps": steps,
         "negative_prompt": neg_prompt,
-        "cfg_scale": 7,
-        "n_iter": 2,
+        "cfg_scale": cfg,
+        "batch_size": 2,
+        "n_iter": 1,
         "width": width,
         "height": height,
     }
@@ -137,7 +142,7 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
     for i in r['images']:
         image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
         image_list.append(image)
-
+        
         # Get Image Info
         # png_payload = {"image": "data:image/png;base64," + i}        
         # response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
@@ -213,7 +218,7 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
 
     # Step4 作画素材
     prompt_history = [["下面我将给你一段话，请你帮我抽取其中的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔，不要输出多余的内容","听懂了，请给我一段文字。"]]
-    prompt_input = str(f"以下是一段描述，抽取其中包括人物、动物、天气、自然景物、人文景物的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}")
+    prompt_input = str(f"以下是一段描述，抽取其中包括{TAG_STRING}的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}")
     response = get_respond(prompt_history, prompt_input)
     print("Step4", response)
 
@@ -222,7 +227,7 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
 
 
 
-def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, width, height, steps, result_list):
+def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, width, height, steps, cfg, result_list):
     # Step 1 use ChatGLM-6B associate image description
     # !!! Currently, we don't take history into consideration
     chatbot, history, image_description, code = gen_image_description(user_input, chatbot, max_length, top_p, temperature, history)
@@ -233,12 +238,25 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         # image_description = history[-1][1]
         # image_description = str("").join(image_description.split('\n')[1:])
         # stop_words = ["好的", "我", "将", "会", "画作", "关于", "一张", "画"]
-        stop_words = ["\n", "\t", "\r", "<br>", "没有描述", "天气：", "自然景物：", "人文景物：", "人物：", "动物："]
+        stop_words = ["\t", "\r", "<br>"]
         for word in stop_words:
-            image_description = image_description.replace(word, ", ")
+            image_description = image_description.replace(word, "\n") + "\n"
         print(image_description)
-        image_description = translate(image_description)
-        print(image_description)
+        tag_dict = {}
+        for tag_class in TAG_CLASSES:
+            pat = r'{}：.*[\n]'.format(tag_class)
+            # print(pat)
+            pat = re.compile( pat)
+            find = pat.findall(image_description)
+            if len(find) > 0:
+                if "没有描述" not in find[0]:
+                    tag_dict[tag_class] = find[0][len(tag_class) + 1: -1]
+        print(tag_dict)
+        tag_dict = dict([(tag, translate(tag_dict[tag])) for tag in tag_dict])
+        print(tag_dict)        
+        # image_description = translate(image_description)
+        # print(image_description)
+
 
 
         # Step 2 use promprGenerater get Prompts
@@ -248,13 +266,13 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
 
         # Alternative plan
         # prompt_list = [ enhance_prompts(image_description) ] * 4
-        prompt_list = tag_extract(image_description)
+        prompt_list = tag_extract(tag_dict)
         print(prompt_list[0])
 
 
         # Step 3 use SD get images
         for pos_prompt, neg_prompt in prompt_list:
-            new_images = call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input)
+            new_images = call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, cfg, user_input)
             result_list = result_list + new_images
             yield chatbot, history, result_list, new_images
         yield chatbot, history, result_list, result_list

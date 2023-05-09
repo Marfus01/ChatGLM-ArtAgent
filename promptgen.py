@@ -15,6 +15,9 @@ import random
 # nltk.download('stopwords')
 # nltk.download('punkt')
 
+TAG_CLASSES = ["人物", "动物", "时间", "天气", "物品", "地点", "景物"]
+TAG_STRING = "、".join(TAG_CLASSES)
+
 # TODO 4.2
 # Load prompt generation seq2seq model
 promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen-lexart", trust_remote_code=True)
@@ -32,7 +35,7 @@ for index, row in danbooru.iterrows():
     if int(row["popularity"]) >= 50:
         tag_dict[row["tag"]] = int(row["popularity"])
         synonym_dict[row["tag"]] = [row["tag"]]
-        synonyms = row["synonyms"]
+        synonyms = row["synonyms"].split(",")
         for s in synonyms:
             synonym_dict[row["tag"]].append(s)
 tag_dict = dict(sorted(tag_dict.items(), key = lambda kv:(kv[1], kv[0]), reverse=True))
@@ -41,8 +44,10 @@ print("danbooru tags loaded")
 
 
 # TODO 4.4
-def enhance_prompts(pos_prompt):
+def enhance_prompts(pos_prompt, tag_dict_):
     pos_prompt = "((masterpiece, best quality, ultra-detailed, illustration)),"  + pos_prompt
+    if "人物" in tag_dict_:
+        pos_prompt += ", ((an extremely delicate and beautiful)), (detailed eyes), (detailed face)"
     neg_prompt = "((nsfw: 1.2)), (EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark"
     return (pos_prompt, neg_prompt)
 
@@ -83,9 +88,9 @@ def gen_prompts(text, batch_size=4):
     return prompt_list
 
 # TODO 4.3
-def tag_extract(text, batch_size=4, mask_ratio=0.2):
+def tag_extract(tag_dict_, batch_size=4, mask_ratio=0.2):
     punctuations = [",", ".", "/", ";", "[", "]", "-", "=", "!", "(", ")", "?" "。", "，", "、", "：", "？", "！"]
-    words = word_tokenize(text)
+    words = word_tokenize(",".join([tag_dict_[t] for t in tag_dict_]))
     words = [w for w in words if w not in punctuations]
     words = [PorterStemmer().stem(w) for w in words if w not in set(stopwords.words("english"))]
     # print(words)
@@ -93,9 +98,10 @@ def tag_extract(text, batch_size=4, mask_ratio=0.2):
     def find_tag(word):
         for option in tag_dict:
             for s in synonym_dict[option]:
-                if 1.5 * len(w) > len(s) and s.startswith(w):
-                    # print(word, option)
+                if 1.5 * len(word) > len(s) and s.startswith(word):
+                    print((word, option, s), end='')
                     return option
+        print((word, ), end='')
         return False
 
     words_ = []
@@ -110,6 +116,5 @@ def tag_extract(text, batch_size=4, mask_ratio=0.2):
     texts = []
     for i in range(batch_size):
         random_list = sorted(random.sample(range(0, len(words_)), int((1 - mask_ratio) * len(words_))))
-        texts.append(", ".join([words_[index] for index in random_list]) + ", " + text)
-    # print(texts)
-    return [enhance_prompts(t) for t in texts]
+        texts.append(", ".join([words_[index] for index in random_list]) + ", " + ",".join([tag_dict_[t] for t in tag_dict_]))
+    return [enhance_prompts(t, tag_dict_) for t in texts]
