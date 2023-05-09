@@ -39,6 +39,7 @@ print("danbooru tags loaded")
 
 
 def enhance_prompts(pos_prompt):
+    # TODO
     pos_prompt = "((masterpiece, best quality, ultra-detailed, illustration)),"  + pos_prompt
     neg_prompt = "((nsfw: 1.2)), (EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark"
     return (pos_prompt, neg_prompt)
