@@ -77,9 +77,17 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
 * 5 实现类 autoGPT 链路，并做出创新性优化 (WLJ)
     * 5.1 调研 autoGPT
         * 分析优势劣势, 如何实现
-    * 5.2 
+    * 5.2 实现 autoGPT
 
 * 6 图像理解
+    * 6.1 上传图像
+
+* 7 丰富功能
+    * 7.1 显示当前 prompts
+    * 7.2 直接与 SD 交互，类似于 Midjourney
+
+* 8 
+
 
 ## Contact us!
 

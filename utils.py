@@ -164,6 +164,7 @@ def call_glm_api(prompt, history, max_length, top_p, temperature):
 
 
 def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history, from_api=True):
+    # TODO 4.1
     def get_respond(prompt_history, prompt_input):
         if not from_api:
             response = ""
@@ -239,6 +240,7 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         image_description = translate(image_description)
         print(image_description)
 
+
         # Step 2 use promprGenerater get Prompts
         # prompt_list = gen_prompts(image_description, batch_size=4)
         # print(prompt_list)
@@ -248,6 +250,8 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         # prompt_list = [ enhance_prompts(image_description) ] * 4
         prompt_list = tag_extract(image_description)
         print(prompt_list[0])
+
+
         # Step 3 use SD get images
         for pos_prompt, neg_prompt in prompt_list:
             new_images = call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input)

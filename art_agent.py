@@ -23,7 +23,7 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                 with gr.Tab("Gallery"):
                     result_gallery = gr.Gallery(label='Output', show_label=False).style(preview=True)
                 with gr.Tab("Upload Image"):
-                    # TODO
+                    # TODO 6.1
                     upload_image = gr.Image(label='Upload', show_label=True)
             with gr.Row():
                 with gr.Tab("Settings"):
@@ -46,13 +46,13 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                             with gr.Row():
                                 top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P 🧊", interactive=True)
                                 temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature 🔥", interactive=True)
-                            # TODO
+                            # TODO 5.2
                             self_chat_round = gr.Slider(0, 3, value=0, step=0, label="Under Development", interactive=True)  # Self Chat Round
-                with gr.Tab("Actions"):
-                    # TODO 
+                with gr.Tab("More Actions"):
+                    # TODO 7.1
                     c1 = gr.HTML("under development")
                 with gr.Tab("About Us"):
-                    # TODO 
+                    # TODO 1.4
                     c2 = gr.HTML("under development")
 
     history = gr.State([])

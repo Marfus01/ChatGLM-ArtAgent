@@ -15,12 +15,14 @@ import random
 # nltk.download('stopwords')
 # nltk.download('punkt')
 
+# TODO 4.2
 # Load prompt generation seq2seq model
 promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen-lexart", trust_remote_code=True)
 promptgen_model = AutoModelForCausalLM.from_pretrained("./model/promptgen-lexart", trust_remote_code=True).cuda()
 promptgen_model = promptgen_model.eval()
 print("promptgen_model loaded")
 
+# TODO 4.3
 # Load donbooru tags
 synonym_dict = dict()
 tag_dict = dict()
@@ -38,12 +40,13 @@ print("danbooru tags loaded")
 # print(synonym_dict)
 
 
+# TODO 4.4
 def enhance_prompts(pos_prompt):
-    # TODO
     pos_prompt = "((masterpiece, best quality, ultra-detailed, illustration)),"  + pos_prompt
     neg_prompt = "((nsfw: 1.2)), (EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark"
     return (pos_prompt, neg_prompt)
 
+# TODO 4.2
 def generate_batch(input_ids, min_length=20, max_length=300, num_beams=2, temperature=1, repetition_penalty=1, length_penalty=1, sampling_mode="Top K", top_k=12, top_p=0.15):
     top_p = float(top_p) if sampling_mode == 'Top P' else None
     top_k = int(top_k) if sampling_mode == 'Top K' else None
@@ -64,7 +67,7 @@ def generate_batch(input_ids, min_length=20, max_length=300, num_beams=2, temper
     texts = promptgen_tokenizer.batch_decode(outputs, skip_special_tokens=True)
     return texts
 
-
+# TODO 4.2
 def gen_prompts(text, batch_size=4):
     input_ids = promptgen_tokenizer(text[:256], return_tensors="pt").input_ids
     if input_ids.shape[1] == 0:
@@ -79,6 +82,7 @@ def gen_prompts(text, batch_size=4):
         prompt_list.append( enhance_prompts(t[0:t.find("Negative")]) )
     return prompt_list
 
+# TODO 4.3
 def tag_extract(text, batch_size=4, mask_ratio=0.2):
     punctuations = [",", ".", "/", ";", "[", "]", "-", "=", "!", "(", ")", "?" "。", "，", "、", "：", "？", "！"]
     words = word_tokenize(text)
