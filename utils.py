@@ -13,6 +13,7 @@ from promptgen import *
 import time
 import random
 import re
+from tqdm import tqdm
 
 
 # glm_tokenizer = AutoTokenizer.from_pretrained("./model/ChatGLM-6B", trust_remote_code=True)
@@ -217,7 +218,7 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
     history.append([chatbot[-1][0], chatbot[-1][1]])
 
     # Step4 作画素材
-    prompt_history = [["下面我将给你一段话，请你帮我抽取其中的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔，不要输出多余的内容","听懂了，请给我一段文字。"]]
+    prompt_history = [["下面我将给你一段话，请你帮我抽取其中的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔，一定不要输出多余的内容和符号","听懂了，请给我一段文字。"]]
     prompt_input = str(f"以下是一段描述，抽取其中包括{TAG_STRING}的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}。 {user_input}")
     response = get_respond(prompt_history, prompt_input)
     print("Step4", response)
@@ -243,16 +244,21 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
             image_description = image_description.replace(word, "\n") + "\n"
         # print(image_description)
         tag_dict = {}
-        for tag_class in TAG_CLASSES:
+        for tag_class in TAG_CLASSES + ["构图", "主体", "背景"]:
             pat = r'{}：.*[\n]'.format(tag_class)
             # print(pat)
             pat = re.compile( pat)
             find = pat.findall(image_description)
             if len(find) > 0:
-                if "没有描述" not in find[0]:
+                if "根据描述无法识别" not in find[0] and "没有描述" not in find[0] and "不知道" not in find[0] and len(find[0]) > 1:
                     tag_dict[tag_class] = find[0][len(tag_class) + 1: -1]
-        # print(tag_dict)
-        tag_dict = dict([(tag, translate(tag_dict[tag])) for tag in tag_dict])
+        print(tag_dict)
+        if len(tag_dict) <= 1:
+            for word in TAG_CLASSES + ["\n", "\t", "\r", "<br>"] + ["根据描述无法识别", "没有描述", "不知道"]:
+                image_description = image_description.replace(word, ", ")
+            tag_dict["其他"] = image_description
+            print(tag_dict)
+        tag_dict = dict([(tag, translate(tag_dict[tag])) for tag in tag_dict if len(tag_dict[tag]) > 0])
         print(tag_dict)        
         # image_description = translate(image_description)
         # print(image_description)
@@ -268,12 +274,12 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         print(prompt_list[0])
 
         # Show Prompts
-        prompt_text = "\n Prompt:\n " + str(prompt_list[0][0]) + "\n\nNegative Prompt: \n" + str(prompt_list[0][1])
+        prompt_text = "\n\n Prompt:\n\n " + str(prompt_list[0][0]) + "\n\nNegative Prompt: \n\n" + str(prompt_list[0][1])
         chatbot[-1] = (chatbot[-1][0], chatbot[-1][1] + prompt_text)
 
 
         # Step 3 use SD get images
-        for pos_prompt, neg_prompt in prompt_list:
+        for pos_prompt, neg_prompt in tqdm(prompt_list):
             new_images = call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, cfg, user_input)
             result_list = result_list + new_images
             yield chatbot, history, result_list, new_images

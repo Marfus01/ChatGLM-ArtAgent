@@ -12,11 +12,11 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
             chatbot = gr.Chatbot(greetings).style(height=640)
             with gr.Box():
                 with gr.Row():
-                    with gr.Column(scale=8):
+                    with gr.Column(scale=3):
                         user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=3).style(
                             container=False)
-                    with gr.Column(scale=1):
-                        submitBtn = gr.Button("Chat with GLM 🚀")
+                    with gr.Column(scale=1, min_width=100):
+                        submitBtn = gr.Button("Chat with GLM 🚀",)
                         drawBtn = gr.Button("Generate Image 🎨", variant="primary")
         with gr.Column(scale=3):
             with gr.Group():
@@ -48,6 +48,7 @@ with gr.Blocks(title="ChatGLM ArtAgent") as demo:
                                 temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature 🔥", interactive=True)
                             # TODO 5.2
                             self_chat_round = gr.Slider(0, 3, value=0, step=0, label="Under Development", interactive=True)  # Self Chat Round
+                            prompt_mask_ratio = gr.Slider(0, 1, value=0.8, step=0.05, label="Under Development", interactive=True)
                 with gr.Tab("More Actions"):
                     # TODO 7.1
                     c1 = gr.HTML("under development")
