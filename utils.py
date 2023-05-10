@@ -213,7 +213,7 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
     #     history.append([chatbot[-1][0], chatbot[-1][1]])
     #     return chatbot, history, parse_text(response), "FAILED"
 
-    chatbot.append((parse_text(user_input), parse_text(response)))
+    chatbot.append((parse_text("请帮我画："+user_input), parse_text(response)))
     history.append([chatbot[-1][0], chatbot[-1][1]])
 
     # Step4 作画素材
@@ -257,8 +257,6 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         # image_description = translate(image_description)
         # print(image_description)
 
-
-
         # Step 2 use promprGenerater get Prompts
         # prompt_list = gen_prompts(image_description, batch_size=4)
         # print(prompt_list)
@@ -268,6 +266,9 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         # prompt_list = [ enhance_prompts(image_description) ] * 4
         prompt_list = tag_extract(tag_dict)
         print(prompt_list[0])
+
+        prompt_text = "Prompt:\n " + str(prompt_list[0][0]) + "\n\nNegative Prompt: \n" + str(prompt_list[0][1])
+        chatbot.append(("请输出实际画图指令", prompt_text))
 
 
         # Step 3 use SD get images

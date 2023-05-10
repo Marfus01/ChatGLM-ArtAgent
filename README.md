@@ -10,12 +10,20 @@
 1. clone 本项目并安装依赖
 
 ```shell
-git clone https://github.com/tuteng0915/ChatGLM-ArtAgent.git
-cd ChatGLM-ArtAgent
-pip install -r requirements.txt
+$ git clone https://github.com/tuteng0915/ChatGLM-ArtAgent.git
+$ cd ChatGLM-ArtAgent
+$ pip install -r requirements.txt
 ```
 
-2. 调整 ChatGLM-6B 和 Stable Diffusion 接口
+2. 安装 nltk 模型及数据
+```shell
+$ python
+$ import nltk
+$ nltk.download('stopwords')
+$ nltk.download('punkt')
+```
+
+3. 调整 ChatGLM-6B 和 Stable Diffusion 接口
 ```python
 # ./utils.py/call_glm_api
 def call_glm_api(prompt, history, max_length, top_p, temperature):
@@ -26,6 +34,19 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
     url = "http://127.0.0.1:6016"       # 将该行修改为 AUTOMATIC1111/stable-diffusion-webui 地址
 ```
 
+4. 下载 promptgen_model 置于 ./model/promptgen-lexart
+
+https://cloud.tsinghua.edu.cn/d/e2797260a8f94ba994dd/
+
+5. 运行
+```shell
+$ python art_agent.py
+# 可以看到如下输出:
+promptgen_model loaded
+danbooru tags loaded
+Running on local URL:  http://127.0.0.1:6006
+```
+浏览器访问 `localhost:6006` 即可
 
 #### 硬件需求
 
