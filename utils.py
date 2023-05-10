@@ -194,7 +194,7 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
 
     # Step3 作画素材
     prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，请直接给出作画内容，不要输出不必要的内容，你只需回复作画内容。你听懂了吗", "听懂了。请给我一些作画的指令。"]]
-    prompt_input = str(f"我现在要画一副画，这幅画关于：{response}。请帮我详细描述作画中的画面主体和画面背景，并添加一些内容以丰富细节")
+    prompt_input = str(f"我现在要画一副画，这幅画关于：{response}。请帮我详细描述作画中的画面构图、画面主体和画面背景，并添加一些内容以丰富细节。回答中不要包含这一句话")
     response = get_respond(prompt_history, prompt_input)
     print("Step3", response)
 
@@ -218,7 +218,7 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
 
     # Step4 作画素材
     prompt_history = [["下面我将给你一段话，请你帮我抽取其中的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔，不要输出多余的内容","听懂了，请给我一段文字。"]]
-    prompt_input = str(f"以下是一段描述，抽取其中包括{TAG_STRING}的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}")
+    prompt_input = str(f"以下是一段描述，抽取其中包括{TAG_STRING}的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}。 {user_input}")
     response = get_respond(prompt_history, prompt_input)
     print("Step4", response)
 
@@ -241,7 +241,7 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         stop_words = ["\t", "\r", "<br>"]
         for word in stop_words:
             image_description = image_description.replace(word, "\n") + "\n"
-        print(image_description)
+        # print(image_description)
         tag_dict = {}
         for tag_class in TAG_CLASSES:
             pat = r'{}：.*[\n]'.format(tag_class)
@@ -251,7 +251,7 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
             if len(find) > 0:
                 if "没有描述" not in find[0]:
                     tag_dict[tag_class] = find[0][len(tag_class) + 1: -1]
-        print(tag_dict)
+        # print(tag_dict)
         tag_dict = dict([(tag, translate(tag_dict[tag])) for tag in tag_dict])
         print(tag_dict)        
         # image_description = translate(image_description)
@@ -267,8 +267,9 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         prompt_list = tag_extract(tag_dict)
         print(prompt_list[0])
 
-        prompt_text = "Prompt:\n " + str(prompt_list[0][0]) + "\n\nNegative Prompt: \n" + str(prompt_list[0][1])
-        chatbot.append(("请输出实际画图指令", prompt_text))
+        # Show Prompts
+        prompt_text = "\n Prompt:\n " + str(prompt_list[0][0]) + "\n\nNegative Prompt: \n" + str(prompt_list[0][1])
+        chatbot[-1] = (chatbot[-1][0], chatbot[-1][1] + prompt_text)
 
 
         # Step 3 use SD get images

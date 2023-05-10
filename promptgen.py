@@ -88,7 +88,7 @@ def gen_prompts(text, batch_size=4):
     return prompt_list
 
 # TODO 4.3
-def tag_extract(tag_dict_, batch_size=4, mask_ratio=0.2):
+def tag_extract(tag_dict_, batch_size=4, mask_ratio=0.3):
     punctuations = [",", ".", "/", ";", "[", "]", "-", "=", "!", "(", ")", "?" "。", "，", "、", "：", "？", "！"]
     words = word_tokenize(",".join([tag_dict_[t] for t in tag_dict_]))
     words = [w for w in words if w not in punctuations]
