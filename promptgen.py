@@ -37,7 +37,7 @@ for index, row in danbooru.iterrows():
         synonym_dict[row["tag"]] = [row["tag"]]
         synonyms = row["synonyms"].split(",")
         for s in synonyms:
-            synonym_dict[row["tag"]].append(s)
+            synonym_dict[row["tag"]].append(s.replace("_", " "))
 tag_dict = dict(sorted(tag_dict.items(), key = lambda kv:(kv[1], kv[0]), reverse=True))
 print("danbooru tags loaded")
 # print(synonym_dict)
