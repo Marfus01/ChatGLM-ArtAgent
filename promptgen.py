@@ -58,6 +58,8 @@ def enhance_prompts(pos_prompt, tag_dict_):
     if "1girl" in pos_prompt or "1boy" in pos_prompt:
         pos_prompt += ", ((an extremely delicate and beautiful)), (detailed eyes), (detailed face)"
     neg_prompt = "((nsfw: 1.2)), (EasyNegative:0.8), (badhandv4:0.8), (worst quality, low quality, extra digits), lowres, blurry, text, logo, artist name, watermark"
+    if "人物" not in tag_dict_:
+        neg_prompt += "human, 1girl, 1boy, loli, male, female, people"
     return (pos_prompt, neg_prompt)
 
 # TODO 4.2
@@ -101,7 +103,7 @@ def tag_extract(tag_dict_, batch_size=8, mask_ratio=0.3):
     punctuations = [",", ".", "/", ";", "[", "]", "-", "=", "!", "(", ")", "?" "。", "，", "、", "：", "？", "！"]
     words = word_tokenize(" , ".join([tag_dict_[t] for t in tag_dict_]))
     words = [w for w in words if w not in punctuations]
-    words = [PorterStemmer().stem(w) for w in words if w not in set(stopwords.words("english"))]
+    words += [PorterStemmer().stem(w) for w in words if w not in set(stopwords.words("english"))]
     # print(words)
     
     def find_tag(word):
@@ -129,8 +131,8 @@ def tag_extract(tag_dict_, batch_size=8, mask_ratio=0.3):
     words_ = list(set(words_))
     print(words_)
     
-    texts = []
-    for i in range(batch_size):
+    texts = [", ".join(words_)]
+    for i in range(batch_size - 1):
         random_list = sorted(random.sample(range(0, len(words_)), int((1 - mask_ratio) * len(words_))))
         texts.append(", ".join([words_[index] for index in random_list]))
     return [enhance_prompts(t, tag_dict_) for t in texts]

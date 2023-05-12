@@ -2,22 +2,26 @@ tube_top
 blouse
 hoodie
 camisole
-camisole, strap slip
+camisole
+strap slip
 polo shirt
 strapless
 shirt
-sweater, heart cutout
+sweater
+heart cutout
 smock
-sailor shirt, ribbon
+sailor shirt
+ribbon
 collared_shirt
 dress
 wide sleeves frilled shirt
-wide sleeves frilled shirt, sleeves past wrists
 off-shoulder sweater
 turtleneck
 crop top
 sleeveless
-collared_shirt, vertical stripes, necktie
+collared_shirt
+vertical stripes
+necktie
 striped shirt
 border shirt
 gingham check collared shirt

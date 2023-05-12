@@ -34,11 +34,11 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, user_input=""):
     url = "http://127.0.0.1:6016"       # 将该行修改为 AUTOMATIC1111/stable-diffusion-webui 地址
 ```
 
-4. 下载 promptgen_model 置于 ./model/promptgen-lexart
+<!-- 4. 下载 promptgen_model 置于 ./model/promptgen-lexart
 
-https://cloud.tsinghua.edu.cn/d/e2797260a8f94ba994dd/
+https://cloud.tsinghua.edu.cn/d/e2797260a8f94ba994dd/ -->
 
-5. 运行
+4. 运行
 ```shell
 $ python art_agent.py
 # 可以看到如下输出:

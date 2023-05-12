@@ -294,7 +294,7 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
             tag_dict["其他"] = image_description
             print(tag_dict)
         
-        tag_dict = dict([(tag, translate(tag_dict[tag])) for tag in tag_dict if len(tag_dict[tag]) > 0])
+        tag_dict = dict([(tag, translate(tag_dict[tag]).lower()) for tag in tag_dict if len(tag_dict[tag]) > 0])
         print(tag_dict)        
         file_handle.write(str(tag_dict) + "\n")
         # image_description = translate(image_description)

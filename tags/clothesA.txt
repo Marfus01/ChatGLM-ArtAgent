@@ -1,6 +1,7 @@
-pinafore dress, white blouse
-overall, T-shirt
-sundress, white blouse
+pinafore dress,
+overall,
+T-shirt
+sundress
 child smock
 kigurumi
 jumpsuit
@@ -10,5 +11,8 @@ track suit
 marching band uniform
 kids kindergarten uniform
 cycle-wear
-blazer, school uniform, bowtie
-serafuku, checked pleated_skirtskirt
+blazer,
+school uniform
+bowtie
+serafuku
+checked pleated_skirtskirt
