@@ -23,6 +23,8 @@ TAG_STRING = "、".join(TAG_CLASSES)
 # promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen-lexart", trust_remote_code=True)
 # promptgen_model = AutoModelForCausalLM.from_pretrained("./model/promptgen-lexart", trust_remote_code=True).cuda()
 # promptgen_model = promptgen_model.eval()
+promptgen_tokenizer = None
+promptgen_model = None
 # print("promptgen_model loaded")
 
 # TODO 4.3
