@@ -20,10 +20,10 @@ TAG_STRING = "、".join(TAG_CLASSES)
 
 # TODO 4.2
 # Load prompt generation seq2seq model
-promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen-lexart", trust_remote_code=True)
-promptgen_model = AutoModelForCausalLM.from_pretrained("./model/promptgen-lexart", trust_remote_code=True).cuda()
-promptgen_model = promptgen_model.eval()
-print("promptgen_model loaded")
+# promptgen_tokenizer = AutoTokenizer.from_pretrained("./model/promptgen-lexart", trust_remote_code=True)
+# promptgen_model = AutoModelForCausalLM.from_pretrained("./model/promptgen-lexart", trust_remote_code=True).cuda()
+# promptgen_model = promptgen_model.eval()
+# print("promptgen_model loaded")
 
 # TODO 4.3
 # Load donbooru tags
@@ -88,9 +88,9 @@ def gen_prompts(text, batch_size=4):
     return prompt_list
 
 # TODO 4.3
-def tag_extract(tag_dict_, batch_size=4, mask_ratio=0.3):
+def tag_extract(tag_dict_, batch_size=8, mask_ratio=0.3):
     punctuations = [",", ".", "/", ";", "[", "]", "-", "=", "!", "(", ")", "?" "。", "，", "、", "：", "？", "！"]
-    words = word_tokenize(",".join([tag_dict_[t] for t in tag_dict_]))
+    words = word_tokenize(" , ".join([tag_dict_[t] for t in tag_dict_]))
     words = [w for w in words if w not in punctuations]
     words = [PorterStemmer().stem(w) for w in words if w not in set(stopwords.words("english"))]
     # print(words)

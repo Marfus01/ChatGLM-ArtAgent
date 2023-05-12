@@ -131,7 +131,7 @@ def call_sd_t2i(pos_prompt, neg_prompt, width, height, steps, cfg, user_input=""
         "steps": steps,
         "negative_prompt": neg_prompt,
         "cfg_scale": cfg,
-        "batch_size": 2,
+        "batch_size": 1,
         "n_iter": 1,
         "width": width,
         "height": height,
@@ -275,9 +275,12 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
             if pos != -1:
                 tag_pos_dict[t] = pos
         tag_pos_dict = sorted(tag_pos_dict.items(), key = lambda kv:(kv[1], kv[0]))
-        tag_pos_dict = [(index, a[0], a[1]) for index, a in enumerate(tag_pos_dict)] + [len(tag_pos_dict), "", len(image_description)]
-        for index in len(tag_pos_dict) - 1:
-            tmp = image_description[tag_pos_dict[index][2]+len(tag_pos_dict[index][1]) + 1:tag_pos_dict[index+1][2]]
+        tag_pos_dict = [(index, a[0], a[1]) for index, a in enumerate(tag_pos_dict)] + [(len(tag_pos_dict), "", len(image_description))]
+        print(tag_pos_dict)
+        for index in range(len(tag_pos_dict) - 1):
+            l = tag_pos_dict[index][2] + len(tag_pos_dict[index][1]) + 1
+            r = tag_pos_dict[index+1][2]
+            tmp = image_description[l:r]
             if "不清楚" not in tmp and "无" not in tmp and "没有描述" not in tmp and "不知道" not in tmp:
                 tmp = tmp.replace('\n', ", ")
                 tag_dict[tag_pos_dict[index][1]] = tmp
