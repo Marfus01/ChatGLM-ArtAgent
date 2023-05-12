@@ -1,0 +1,51 @@
+aqua
+black
+blonde
+blue
+light blue
+dark blue
+brown
+light brown
+green
+dark green
+light green
+grey
+orange
+pink
+purple
+light purple
+red
+white
+multicolored
+colored inner
+gradient
+rainbow
+split-color
+streaked
+two-tone
+colored tips
+black
+blond
+silver
+gray
+yellow
+blue
+sky blue
+indigo
+purple
+red
+burgundy
+vermilion
+pink
+coral
+brown
+orange
+turquoise
+green
+aqua
+amber
+hazel
+iridescence
+multicolored
+gradient
+starry print

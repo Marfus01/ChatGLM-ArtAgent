@@ -5,7 +5,7 @@ import torch
 import jieba
 import re, string
 import nltk
-from nltk import word_tokenize
+from nltk import word_tokenize, pos_tag
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
 import pandas as pd
@@ -109,9 +109,15 @@ def tag_extract(tag_dict_, batch_size=4, mask_ratio=0.3):
         tag = find_tag(w)
         if tag:
             words_.append(tag)
-    
+
+    def get_content_word(word):
+        word_tags = pos_tag(word_tokenize(word))
+        return [w[0] for w in word_tags if w[1][0] in "GMNRV"]
+
+    for t in tag_dict_:
+        words_ += get_content_word(tag_dict_[t])
+        
     words_ = list(set(words_))
-    words_ += [tag_dict_[t] for t in tag_dict_]
     print(words_)
     
     texts = []

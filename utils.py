@@ -169,7 +169,7 @@ def call_glm_api(prompt, history, max_length, top_p, temperature):
     return response
 
 
-def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history, from_api=True):
+def gen_image_description(user_input, chatbot, max_length, top_p, temperature, history, file_handle, from_api=True):
     # TODO 4.1
     def get_respond(prompt_history, prompt_input):
         if not from_api:
@@ -180,24 +180,33 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
         else:
             response = call_glm_api(prompt_input, prompt_history, max_length, top_p, temperature)["response"]
         return response
+    def write_log():
+        file_handle.write("="*20 + "\n")
+        file_handle.write("prompt_history:" + str(prompt_history) + "\n")
+        file_handle.write("prompt_input:" + prompt_input + "\n")
+        file_handle.write("response:" + response + "\n\n")
+        file_handle.write("="*20+ "\n")
 
     # Step1 名词解释
     prompt_history = [["我接下来会给你一些名词，请你依次给出它们的解释。","好的，请给我一些指令。"]]
     prompt_input = str(f"名词解释：“{user_input}”，请详细解释这些词，并添加一些形象和内容以丰富细节，不要输出多余的信息")
     response = get_respond(prompt_history, prompt_input)
     print("Step1", response)
+    write_log()
 
     # Step2 元素提取和总结
     prompt_history.append([prompt_input, response])
     prompt_input = str(f"请总结归纳你刚刚的解释，并为其添加一些视觉上的元素和细节，不要输出多余的信息。")
     response = get_respond(prompt_history, prompt_input)
     print("Step2", response)
+    write_log()
 
     # Step3 作画素材
     prompt_history = [["我接下来会给你一些作画的指令，你只要回复出作画内容及对象，不需要你作画，不需要给我参考，请直接给出作画内容，不要输出不必要的内容，你只需回复作画内容。你听懂了吗", "听懂了。请给我一些作画的指令。"]]
     prompt_input = str(f"我现在要画一副画，这幅画关于：{response}。请帮我详细描述作画中的画面构图、画面主体和画面背景，并添加一些内容以丰富细节。回答中不要包含这一句话")
     response = get_respond(prompt_history, prompt_input)
     print("Step3", response)
+    write_log()
 
     # 检测
     # retry_count = 0
@@ -222,6 +231,7 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
     prompt_input = str(f"以下是一段描述，抽取其中包括{TAG_STRING}的图像元素，忽略其他非图像的描述，将抽取结果以逗号分隔：{response}。 {user_input}")
     response = get_respond(prompt_history, prompt_input)
     print("Step4", response)
+    write_log()
 
     # print(history[-1])
     return chatbot, history, parse_text(response), "SUCCESS"
@@ -229,9 +239,11 @@ def gen_image_description(user_input, chatbot, max_length, top_p, temperature, h
 
 
 def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, width, height, steps, cfg, result_list):
+    file_handle = open('output/'+ time.strftime("%Y-%m-%d-%H-%M-%S-", time.localtime()) + str(user_input[:12]) + '.txt', 'w', encoding="utf8")
+    
     # Step 1 use ChatGLM-6B associate image description
     # !!! Currently, we don't take history into consideration
-    chatbot, history, image_description, code = gen_image_description(user_input, chatbot, max_length, top_p, temperature, history)
+    chatbot, history, image_description, code = gen_image_description(user_input, chatbot, max_length, top_p, temperature, history, file_handle)
 
     if code != "SUCCESS":
         yield chatbot, history, result_list, result_list
@@ -244,22 +256,24 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
             image_description = image_description.replace(word, "\n") + "\n"
         # print(image_description)
         tag_dict = {}
-        for tag_class in TAG_CLASSES + ["构图", "主体", "背景"]:
+        for tag_class in TAG_CLASSES + ["构图", "主体", "背景", "内容"]:
             pat = r'{}：.*[\n]'.format(tag_class)
             # print(pat)
             pat = re.compile( pat)
             find = pat.findall(image_description)
             if len(find) > 0:
-                if "根据描述无法识别" not in find[0] and "没有描述" not in find[0] and "不知道" not in find[0] and len(find[0]) > 1:
+                if "不清楚" not in find[0] and "无" not in find[0] and "没有描述" not in find[0] and "不知道" not in find[0] and len(find[0]) > 1:
                     tag_dict[tag_class] = find[0][len(tag_class) + 1: -1]
         print(tag_dict)
+        file_handle.write(str(tag_dict) + "\n")
         if len(tag_dict) <= 1:
-            for word in TAG_CLASSES + ["\n", "\t", "\r", "<br>"] + ["根据描述无法识别", "没有描述", "不知道"]:
+            for word in TAG_CLASSES + ["\n", "\t", "\r", "<br>"] + ["根据描述无法识别", "无", "没有描述", "不知道", "不清楚"]:
                 image_description = image_description.replace(word, ", ")
             tag_dict["其他"] = image_description
             print(tag_dict)
         tag_dict = dict([(tag, translate(tag_dict[tag])) for tag in tag_dict if len(tag_dict[tag]) > 0])
         print(tag_dict)        
+        file_handle.write(str(tag_dict) + "\n")
         # image_description = translate(image_description)
         # print(image_description)
 
@@ -272,11 +286,14 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         # prompt_list = [ enhance_prompts(image_description) ] * 4
         prompt_list = tag_extract(tag_dict)
         print(prompt_list[0])
+        file_handle.write("\n".join(["Prompt:"+p[0]+"\nNegative Prompt:"+p[1] for p in prompt_list]))
 
         # Show Prompts
         prompt_text = "\n\n Prompt:\n\n " + str(prompt_list[0][0]) + "\n\nNegative Prompt: \n\n" + str(prompt_list[0][1])
         chatbot[-1] = (chatbot[-1][0], chatbot[-1][1] + prompt_text)
 
+
+        file_handle.close()
 
         # Step 3 use SD get images
         for pos_prompt, neg_prompt in tqdm(prompt_list):

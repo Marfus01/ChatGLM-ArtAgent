@@ -1,0 +1,24 @@
+tube_top
+blouse
+hoodie
+camisole
+camisole, strap slip
+polo shirt
+strapless
+shirt
+sweater, heart cutout
+smock
+sailor shirt, __colors__ ribbon
+collared_shirt
+__colors__ shirt, __colors__ vest
+dress
+wide sleeves frilled shirt
+wide sleeves frilled shirt, sleeves past wrists
+off-shoulder sweater
+turtleneck
+crop top
+sleeveless
+collared_shirt, vertical stripes, necktie
+striped shirt
+border shirt
+gingham check collared shirt
