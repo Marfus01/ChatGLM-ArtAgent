@@ -15,7 +15,7 @@ import random
 # nltk.download('stopwords')
 # nltk.download('punkt')
 
-TAG_CLASSES = ["人物", "动物", "时间", "天气", "物品", "地点", "景物"]
+TAG_CLASSES = ["人物", "动物", "时间", "天气", "物品", "地点", "景物", "色彩"]
 TAG_STRING = "、".join(TAG_CLASSES)
 
 # TODO 4.2
@@ -29,6 +29,7 @@ TAG_STRING = "、".join(TAG_CLASSES)
 # Load donbooru tags
 synonym_dict = dict()
 tag_dict = dict()
+
 danbooru = pd.read_csv('./tags/danbooru.csv')
 danbooru.fillna('NaN', inplace=True)
 for index, row in danbooru.iterrows():
@@ -38,6 +39,15 @@ for index, row in danbooru.iterrows():
         synonyms = row["synonyms"].split(",")
         for s in synonyms:
             synonym_dict[row["tag"]].append(s.replace("_", " "))
+
+files = ['./tag/' + f for f in os.listdir('./tag/') if f.endswith('.txt')]
+for file_name in files:
+    with open(file_name) as f:
+        for line in f:
+            line = line.strip()
+            tag_dict[line] = 30000
+            synonym_dict[line] = [line]
+            
 tag_dict = dict(sorted(tag_dict.items(), key = lambda kv:(kv[1], kv[0]), reverse=True))
 print("danbooru tags loaded")
 # print(synonym_dict)

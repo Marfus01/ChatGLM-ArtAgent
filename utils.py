@@ -281,7 +281,7 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
             l = tag_pos_dict[index][2] + len(tag_pos_dict[index][1]) + 1
             r = tag_pos_dict[index+1][2]
             tmp = image_description[l:r]
-            if "不清楚" not in tmp and "无" not in tmp and "没有描述" not in tmp and "不知道" not in tmp:
+            if "不清楚" not in tmp and "无" not in tmp and "没有描述" not in tmp and "不知道" not in tmp and "未指定" not in tmp:
                 tmp = tmp.replace('\n', ", ")
                 tag_dict[tag_pos_dict[index][1]] = tmp
 
