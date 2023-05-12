@@ -251,26 +251,46 @@ def sd_predict(user_input, chatbot, max_length, top_p, temperature, history, wid
         # image_description = history[-1][1]
         # image_description = str("").join(image_description.split('\n')[1:])
         # stop_words = ["好的", "我", "将", "会", "画作", "关于", "一张", "画"]
-        stop_words = ["\t", "\r", "<br>"]
+        stop_words = ["\t", "\r", '-', '*', '·', "<br>"]
         for word in stop_words:
             image_description = image_description.replace(word, "\n") + "\n"
         # print(image_description)
         tag_dict = {}
-        for tag_class in TAG_CLASSES + ["构图", "主体", "背景", "内容"]:
-            pat = r'{}：.*[\n]'.format(tag_class)
-            # print(pat)
-            pat = re.compile( pat)
-            find = pat.findall(image_description)
-            if len(find) > 0:
-                if "不清楚" not in find[0] and "无" not in find[0] and "没有描述" not in find[0] and "不知道" not in find[0] and len(find[0]) > 1:
-                    tag_dict[tag_class] = find[0][len(tag_class) + 1: -1]
+
+        # base on re        
+        # for tag_class in TAG_CLASSES + ["构图", "主体", "背景", "内容"]:
+        #     pat = r'{}：.*[\n]'.format(tag_class)
+        #     # print(pat)
+        #     pat = re.compile( pat)
+        #     find = pat.findall(image_description)
+        #     if len(find) > 0:
+        #         if "不清楚" not in find[0] and "无" not in find[0] and "没有描述" not in find[0] and "不知道" not in find[0] and len(find[0]) > 1:
+        #             tag_dict[tag_class] = find[0][len(tag_class) + 1: -1]
+        
+        # base on find
+        TAG_CLASSES_ = TAG_CLASSES + ["构图", "主体", "背景", "内容"]
+        tag_pos_dict = {}
+        for t in TAG_CLASSES_:
+            pos = image_description.find(t+"：")
+            if pos != -1:
+                tag_pos_dict[t] = pos
+        tag_pos_dict = sorted(tag_pos_dict.items(), key = lambda kv:(kv[1], kv[0]))
+        tag_pos_dict = [(index, a[0], a[1]) for index, a in enumerate(tag_pos_dict)] + [len(tag_pos_dict), "", len(image_description)]
+        for index in len(tag_pos_dict) - 1:
+            tmp = image_description[tag_pos_dict[index][2]+len(tag_pos_dict[index][1]) + 1:tag_pos_dict[index+1][2]]
+            if "不清楚" not in tmp and "无" not in tmp and "没有描述" not in tmp and "不知道" not in tmp:
+                tmp = tmp.replace('\n', ", ")
+                tag_dict[tag_pos_dict[index][1]] = tmp
+
         print(tag_dict)
         file_handle.write(str(tag_dict) + "\n")
+        
         if len(tag_dict) <= 1:
             for word in TAG_CLASSES + ["\n", "\t", "\r", "<br>"] + ["根据描述无法识别", "无", "没有描述", "不知道", "不清楚"]:
                 image_description = image_description.replace(word, ", ")
             tag_dict["其他"] = image_description
             print(tag_dict)
+        
         tag_dict = dict([(tag, translate(tag_dict[tag])) for tag in tag_dict if len(tag_dict[tag]) > 0])
         print(tag_dict)        
         file_handle.write(str(tag_dict) + "\n")
