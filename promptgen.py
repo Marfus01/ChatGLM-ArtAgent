@@ -30,6 +30,14 @@ TAG_STRING = "、".join(TAG_CLASSES)
 synonym_dict = dict()
 tag_dict = dict()
 
+files = ['./tags/' + f for f in os.listdir('./tags/') if f.endswith('.txt')]
+for file_name in files:
+    with open(file_name) as f:
+        for line in f:
+            line = line.strip()
+            tag_dict[line] = 30000
+            synonym_dict[line] = [line]
+
 danbooru = pd.read_csv('./tags/danbooru.csv')
 danbooru.fillna('NaN', inplace=True)
 for index, row in danbooru.iterrows():
@@ -39,18 +47,9 @@ for index, row in danbooru.iterrows():
         synonyms = row["synonyms"].split(",")
         for s in synonyms:
             synonym_dict[row["tag"]].append(s.replace("_", " "))
-
-files = ['./tag/' + f for f in os.listdir('./tag/') if f.endswith('.txt')]
-for file_name in files:
-    with open(file_name) as f:
-        for line in f:
-            line = line.strip()
-            tag_dict[line] = 30000
-            synonym_dict[line] = [line]
-            
 tag_dict = dict(sorted(tag_dict.items(), key = lambda kv:(kv[1], kv[0]), reverse=True))
-print("danbooru tags loaded")
-# print(synonym_dict)
+
+print("tags loaded")
 
 
 # TODO 4.4

@@ -8,9 +8,8 @@ strapless
 shirt
 sweater, heart cutout
 smock
-sailor shirt, __colors__ ribbon
+sailor shirt, ribbon
 collared_shirt
-__colors__ shirt, __colors__ vest
 dress
 wide sleeves frilled shirt
 wide sleeves frilled shirt, sleeves past wrists

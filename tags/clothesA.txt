@@ -1,5 +1,5 @@
 pinafore dress, white blouse
-overall, __colors__ T-shirt
+overall, T-shirt
 sundress, white blouse
 child smock
 kigurumi
@@ -11,4 +11,4 @@ marching band uniform
 kids kindergarten uniform
 cycle-wear
 blazer, school uniform, bowtie
-serafuku, __colors__ checked pleated_skirtskirt
+serafuku, checked pleated_skirtskirt
